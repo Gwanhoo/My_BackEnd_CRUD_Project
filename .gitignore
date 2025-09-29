@@ -1,0 +1,9 @@
+# env files
+.env
+.env.*
+!.env.example
+
+# deps / cache
+node_modules/
+npm-debug.log*
+.DS_Store

@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+/* =============================
+   1) 디자인 토큰 (@theme)
+   - pr 단위(spacing, radius)
+   - 브랜드 컬러
+============================= */
+@theme {
+  /* spacing */
+  --spacing-pr-1: 1px;
+  --spacing-pr-2: 2px;
+  --spacing-pr-3: 3px;
+  --spacing-pr-4: 4px;
+  --spacing-pr-6: 6px;
+  --spacing-pr-8: 8px;
+  --spacing-pr-10: 10px;
+  --spacing-pr-12: 12px;
+  --spacing-pr-14: 14px;
+  --spacing-pr-16: 16px;
+  --spacing-pr-18: 18px;
+  --spacing-pr-20: 20px;
+  --spacing-pr-24: 24px;
+  --spacing-pr-28: 28px;
+  --spacing-pr-32: 32px;
+  --spacing-pr-36: 36px;
+  --spacing-pr-40: 40px;
+  --spacing-pr-48: 48px;
+  --spacing-pr-56: 56px;
+  --spacing-pr-64: 64px;
+  --spacing-pr-80: 80px;
+  --spacing-pr-96: 96px;
+  --spacing-pr-118: 118px;
+  --spacing-pr-151: 151px;
+  --spacing-pr-172: 172px;
+
+  
+  /* radius */
+  --radius-pr-4: 4px;
+  --radius-pr-6: 6px;
+  --radius-pr-8: 8px;
+  --radius-pr-10: 10px;
+  --radius-pr-12: 12px;
+  --radius-pr-16: 16px;
+  --radius-pr-20: 20px;
+  --radius-pr-24: 24px;
+  --radius-pr-32: 32px;
+  --radius-pr-48: 48px;
+
+  /* colors */
+  --color-b-primary: #005AFF;
+  --color-b-tertiary: #7AA8FF;
+  --color-b-secondary: #F6F8FE;
+}
+
+/* =============================
+   2) 타이포 유틸 (@utility)
+   (점(.) 붙이지 말 것!)
+============================= */
+@utility text-14m  { @apply text-[14px] font-medium; }
+@utility text-14sb { @apply text-[14px] font-semibold; }
+@utility text-16m  { @apply text-[16px] font-medium; }
+@utility text-16sb { @apply text-[16px] font-semibold; }
+@utility text-18m  { @apply text-[18px] font-medium; }
+@utility text-24sb { @apply text-[24px] font-semibold; }
+
+/* 보조 유틸 */
+@utility tw-btn-full { @apply w-full; }
+
+/* =============================
+   3) 컴포넌트 (@layer components)
+============================= */
+@layer components {
+  /* 버튼 */
+  .btn {
+    @apply inline-flex items-center justify-center gap-pr-8
+           whitespace-nowrap select-none
+           rounded-pr-8 px-pr-24 h-pr-48 text-16m
+           transition-all duration-200
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-b-primary/40;
+  }
+  .btn:disabled { @apply opacity-60 cursor-not-allowed; }
+
+  .btn-primary {
+    @apply text-white bg-gradient-to-r from-b-primary to-b-tertiary
+           shadow-[0_2px_8px_rgba(0,0,0,0.12)];
+  }
+  .btn-primary:hover  { @apply shadow-[0_6px_14px_rgba(0,90,255,0.25)]; }
+  .btn-primary:active { @apply translate-y-pr-1 shadow-none; }
+
+  .btn-ghost {
+    @apply bg-transparent text-gray-700 hover:bg-gray-100;
+  }
+
+  /* 링크 */
+  .link { @apply text-gray-700 hover:text-b-primary no-underline; }
+
+  /* 카드 */
+  .card { @apply rounded-pr-12 border-pr-1 border-gray-200 bg-white p-pr-24 shadow-sm; }
+
+  /* 폼 */
+  .form { @apply w-full max-w-pr-520 mx-auto rounded-pr-16 border-pr-1 border-black/5 bg-white p-pr-24 shadow-[0_8px_24px_rgba(0,0,0,0.06)]; }
+  .form-label { @apply block text-16sb text-gray-800 mb-pr-8; }
+
+  /* 인풋 */
+  .input {
+    @apply w-full h-pr-48 px-pr-16 text-16m rounded-pr-8
+           border-pr-1 border-b-primary/20 bg-white
+           outline-none transition-all duration-200;
+  }
+  .input:focus {
+    @apply border-b-primary shadow-[0_0_8px_rgba(0,90,255,0.25)];
+  }
+
+  /* 인풋 그룹(검색바 등) */
+  .input-group { @apply flex items-center gap-pr-12; }
+  .input-group > input { @apply min-w-0 flex-1; }
+  .input-divider { @apply border-t border-gray-300; }
+}
+
+/* ===== Border width: pr 단위 유틸 ===== */
+@utility border-pr-1 { border-width: 1px; }
+@utility border-pr-2 { border-width: 2px; }
+
+/* 방향별 */
+@utility border-t-pr-1 { border-top-width: 1px; }
+@utility border-r-pr-1 { border-right-width: 1px; }
+@utility border-b-pr-1 { border-bottom-width: 1px; }
+@utility border-l-pr-1 { border-left-width: 1px; }

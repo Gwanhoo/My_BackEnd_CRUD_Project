@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
+
+</head>
+<body class="grey-bg">
+
+    <%- include('nav.ejs') %>
+        <form class="form mt-10" action="/edit/<%= post._id %>" method="POST">
+        <h2 class="text-xl font-bold mb-4">수정하기</h2>
+        <label class="form-label">제목</label>
+        <input name="title" class="input" value="<%= post.title %>" />
+
+        <label class="form-label mt-4">내용</label>
+        <textarea name="content" class="input h-40"><%= post.content %></textarea>
+
+        <button type="submit" class="btn btn-primary w-full mt-6">저장</button>
+    </form>
+
+
+</body>
+</html>

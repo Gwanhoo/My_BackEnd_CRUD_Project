@@ -1,0 +1,15 @@
+<header class="bg-white/80 backdrop-blur border-b border-gray-200">
+  <nav class="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
+    <a href="/" class="text-xl font-bold text-blue-600 hover:text-blue-700">코사모</a>
+    <div class="flex items-center gap-3">
+      <% if (!isLogin) { %>
+        <a href="/login" class="link">로그인</a>
+        <a href="/register" class="btn btn-primary">회원가입</a>
+      <% } else { %>
+        <a href="/write" class="btn btn-ghost">글쓰기</a>
+        <a href="/mypage" class="btn btn-primary"><%= user.username %> 마이페이지</a>
+        <a href="/logout" class="btn bg-red-600 text-white hover:bg-red-700">로그아웃</a>
+      <% } %>
+    </div>
+  </nav>
+</header>

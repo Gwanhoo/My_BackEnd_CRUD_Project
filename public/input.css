@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center rounded-pr-8 px-pr-24 h-pr-48 text-[16px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-b-primary/40; }
+  .btn-primary { @apply bg-gradient-to-r from-b-primary to-b-tertiary text-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]; }
+  .btn-primary:hover { @apply shadow-[0_6px_14px_rgba(0,90,255,0.25)]; }
+  .btn-primary:active { @apply translate-y-[1px] shadow-none; }
+
+  .input { @apply w-full h-pr-48 px-pr-16 rounded-pr-8 border border-b-primary/20 bg-white outline-none transition-all duration-200; }
+  .input:focus { @apply border-b-primary shadow-[0_0_8px_rgba(0,90,255,0.25)]; }
+
+  .form { @apply w-full max-w-pr-520 mx-auto rounded-pr-16 border border-black/5 bg-white p-pr-24 shadow-[0_8px_24px_rgba(0,0,0,0.06)]; }
+}

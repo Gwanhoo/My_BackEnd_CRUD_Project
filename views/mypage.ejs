@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>마이페이지</title>
+  <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
+
+</head>
+    <body class="white-bg">
+    <%- include('nav.ejs') %>
+    <main class="max-w-5xl mx-auto px-4 py-8">
+      <section class="card">
+        <h2 class="card-title mb-4"><%= me.username %>님의 마이페이지</h2>
+        <ul class="space-y-2">
+          <% myPosts.forEach(function(post){ %>
+            <li class="border-b py-2">
+              <a href="/detail/<%= post._id %>" class="link"><%= post.title %></a>
+            </li>
+          <% }) %>
+        </ul>
+      </section>
+    </main>
+
+  </div>
+</body>
+</html>

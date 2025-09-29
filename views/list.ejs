@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>글 목록</title>
+  <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <%- include('nav.ejs') %>
+
+  <!-- <form action="/search" method="GET" 
+      class="w-full max-w-pr-520 mx-auto flex items-center gap-pr-12 mt-pr-32 px-pr-16">
+
+
+    <input 
+      type="text" 
+      name="val" 
+      placeholder="검색어를 입력하세요..." 
+      class="input flex-1"
+    />
+
+    <button 
+      type="submit" 
+      class="btn btn-primary px-pr-24 h-pr-48 whitespace-nowrap"
+    >
+      검색
+    </button>
+
+  </form> -->
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <table class="w-full border-collapse">
+      <thead>
+        <tr class="bg-gray-100 text-left">
+          <th class="p-2">제목</th>
+          <th class="p-2">작성자</th>
+          <th class="p-2">작성일</th>
+          <th class="p-2 w-16">수정</th>
+          <th class="p-2 w-16">삭제</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% posts.forEach(function(post){ %>
+          <tr class="border-b hover:bg-gray-50">
+            <!-- 제목 -->
+            <td class="p-2">
+              <a href="/detail/<%= post._id %>" class="hover:underline font-medium">
+                <%= post.title %>
+              </a>
+            </td>
+
+            <!-- 작성자 -->
+            <td class="p-2"><%= post.authorName || '알 수 없음' %></td>
+
+            <!-- 작성일 -->
+            <td class="p-2">
+              <% if (post.createdAt) { %>
+                <%= new Date(post.createdAt).toLocaleDateString() %>
+              <% } %>
+            </td>
+
+            <!-- 수정 -->
+            <td class="p-2 text-center">
+              <% const 내아이디 = user?._id ? String(user._id) : null; %>
+              <% if (isLogin && String(post.authorId) === 내아이디) { %>
+                <a href="/edit/<%= post._id %>" class="text-blue-600 hover:underline">수정</a>
+              <% } %>
+            </td>
+
+            <!-- 삭제 -->
+            <td class="p-2 text-center">
+              <% if (isLogin && String(post.authorId) === 내아이디) { %>
+                <button
+                  data-id="<%= post._id %>"
+                  class="delete text-red-600 hover:underline">
+                  삭제
+                </button>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </main>
+
+  <script>
+    document.querySelectorAll('.delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        fetch(`/delete?docId=${id}`, { method: 'DELETE' })
+          .then(r => r.text())
+          .then(msg => {
+            alert(msg);
+            btn.closest('tr').remove();
+          })
+          .catch(console.error);
+      });
+    });
+  </script>
+</body>
+</html>

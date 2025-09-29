@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>글 상세</title>
+  <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <%- include('nav.ejs') %>
+
+  <% /* 라우터에서 post 또는 result 이름으로 올 수 있으니 호환 처리 */ %>
+  <!-- 서버에서 result 로 넘겨 받은 값을 p로 통일 -->
+  <% const p = (typeof post !== 'undefined' && post) ? post : result; %>
+
+  <main class="max-w-3xl mx-auto px-4 py-8">
+    <article class="card">
+      <h1 class="card-title text-2xl"><%= p.title %></h1>
+
+      <p class="text-sm text-gray-500 mt-1">
+        작성자: <%= p.authorName || '알 수 없음' %>
+        <% if (p.createdAt) { %> · <%= new Date(p.createdAt).toLocaleString() %><% } %>
+      </p>
+
+      <div class="card-body whitespace-pre-line mt-4"><%= p.content %></div>
+
+      <% const 내아이디 = user?._id ? String(user._id) : null; %>
+      <div class="card-actions justify-end">
+        <% if (isLogin && String(p.authorId) === 내아이디) { %>
+          <a href="/edit/<%= p._id %>" class="btn btn-primary">수정</a>
+          <button
+            id="deleteBtn"
+            data-id="<%= p._id %>"
+            class="btn bg-red-600 text-white hover:bg-red-700">
+            삭제
+          </button>
+        <% } %>
+        <a href="/list" class="btn btn-ghost">목록</a>
+      </div>
+    </article>
+    <hr class="my-pr-32 border-gray-300" />
+
+    <div class="max-w-3xl mx-auto mt-pr-24 space-y-pr-16">
+      <p class="text-16m text-gray-700">
+        <strong class="font-semibold text-gray-900">작성자</strong>
+        <span class="ml-pr-8 text-gray-500">댓글내용</span>
+      </p>
+
+      <form action="/comment" method="POST" class="flex items-center gap-pr-12">
+        <input 
+          name="content"
+          type="text" 
+          placeholder="댓글을 입력하세요..."
+          class="flex-1 h-pr-48 px-pr-16 text-16m border-pr-1 border-gray-300 rounded-pr-8 focus:outline-none focus:border-b-primary shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+        >
+        <input type="hidden" name="parentId" value="<%= p._id %>">
+        
+        <button
+          type="submit"
+          class="h-pr-48 px-pr-24 rounded-pr-8 text-white text-16sb bg-blue-600 hover:bg-blue-700 active:translate-y-pr-1 transition-all"
+        >
+          댓글작성
+        </button>
+
+
+      </form>
+      <!-- 댓글 입력 폼 바로 아래 -->
+      <ul class="max-w-3xl mx-auto mt-pr-24 space-y-pr-12">
+        <% if (result1.length === 0) { %>
+          <li class="text-gray-500 text-center text-16m py-pr-24">아직 댓글이 없습니다.</li>
+        <% } else { %>
+          <% result1.forEach(function(c) { %>
+            <li class="border-pr-1 border-gray-200 bg-white rounded-pr-8 p-pr-16 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-pr-8">
+                  <!-- 작성자 아바타 -->
+                  <div class="w-pr-32 h-pr-32 rounded-full bg-gray-200 flex items-center justify-center text-14m text-gray-500 font-semibold">
+                    <%= (c.authorName || 'U').slice(0, 1).toUpperCase() %>
+                  </div>
+                  <p class="text-16sb text-gray-900"><%= c.authorName || '익명' %></p>
+                </div>
+
+                <% if (c.createdAt) { %>
+                  <span class="text-14m text-gray-400">
+                    <%= new Date(c.createdAt).toLocaleString() %>
+                  </span>
+                <% } %>
+              </div>
+
+              <p class="text-16m text-gray-700 mt-pr-12"><%= c.content %></p>
+            </li>
+          <% }) %>
+        <% } %>
+      </ul>
+
+      
+    </div>
+
+  </main>
+
+  <% /* 삭제 요청 (본인만 보이므로 버튼이 있을 때만 동작) */ %>
+  <script>
+    const del = document.getElementById('deleteBtn');
+    if (del) {
+      del.addEventListener('click', () => {
+        const id = del.dataset.id;
+        fetch(`/delete?docId=${id}`, { method: 'DELETE' })
+          .then(r => r.text())
+          .then(msg => {
+            alert(msg);
+            location.href = '/list';
+          })
+          .catch(console.error);
+      });
+    }
+  </script>
+</body>
+</html>
