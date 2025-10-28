@@ -104,21 +104,58 @@ app.get('/write', 로그인확인, (요청, 응답) => {
   응답.render('write.ejs');
 });
 
-app.post('/add', 로그인확인, async (요청, 응답) => {
-  const { title, content } = 요청.body;
+function parseTags(tagString) {
+  if (!tagString) return [];
 
-  if (!title) return 응답.status(400).send('제목을 입력하세요.');
-  if (!content) return 응답.status(400).send('내용을 입력하세요.');
+  const regex = /#([\p{L}\p{N}._-]{1,30})/gu; // 유니코드 문자/숫자 + . _ - 허용
+  const matches = [...tagString.matchAll(regex)];
+  let tags = matches.map(m => m[1]);
 
-  await db.collection('post').insertOne({
-    title,
-    content,
-    authorId: 요청.user._id,        // ✅ 작성자 id(ObjectId)
-    authorName: 요청.user.username, // ✅ 작성자 이름/아이디
-    createdAt: new Date(),
+  // 중복 제거(대소문자 무시), 공백/빈값 제거
+  const seen = new Set();
+  tags = tags.filter(t => {
+    const key = t.toLowerCase();
+    if (!t || seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
 
-  응답.redirect('/list');
+
+  if (tags.length > 10) tags = tags.slice(0, 10);
+
+  return tags;
+}
+
+app.post('/add', 로그인확인, async (요청, 응답) => {
+  try {
+    const title = (요청.body.title || '').trim();
+    const content = (요청.body.content || '').trim();
+    const rawTags = 요청.body.tags || '';
+
+    if (!title)   return 응답.status(400).send('제목을 입력하세요.');
+    if (!content) return 응답.status(400).send('내용을 입력하세요.');
+    if (!요청.user) return 응답.status(401).send('로그인이 필요합니다.');
+
+
+    const tags = parseTags(rawTags);
+    const tags_lc = tags.map(t => t.toLowerCase()); // 검색용(대소문자 무시)
+
+    const doc = {
+      title,
+      content,
+      tags,                 // 표시용 태그(원본 케이스 유지)
+      tags_lc,              // 검색 최적화용 소문자 태그
+      authorId: 요청.user._id,
+      authorName: 요청.user.username,
+      createdAt: new Date(),
+    };
+
+    await db.collection('post').insertOne(doc);
+    return 응답.redirect('/list');
+  } catch (err) {
+    console.error('POST /add error:', err);
+    return 응답.status(500).send('서버 오류가 발생했습니다.');
+  }
 });
 
 app.get('/detail/:id', async (요청, 응답) => {
@@ -292,25 +329,52 @@ app.post('/comment', 로그인확인, async (요청, 응답) => {
 });
 
 
-app.get('/search', async (req, res) => {
-  const searchValue = (req.query.val || '').trim();
+// 특수문자 이스케이프 (사용자 입력을 안전한 정규식 리터럴로)
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
-  if (!searchValue) {
+app.get('/search', async (req, res) => {
+  //  기존 파라미터 'val' 유지 + 링크에서 'keyword'로 넘어와도 허용
+  const raw = (req.query.val ?? req.query.keyword ?? '').toString().trim();
+
+  if (!raw) {
     return res.send(`<script>alert('검색어를 입력하세요'); history.back();</script>`);
   }
 
+  const isTag = raw.startsWith('#');
+  let query;
 
-  const posts = await db.collection('post').find({
-    $expr: {
-      $regexMatch: {
-        input: {
-          $replaceAll: { input: "$title", find: " ", replacement: "" } 
+  if (isTag) {
+    //  #태그 검색: tags_lc 완전일치
+    const tag = raw.slice(1).toLowerCase();
+    query = { tags_lc: tag };
+  } else {
+    //  일반 검색: 제목(공백무시) OR 내용 OR 태그명(대소문자무시)
+    const escaped = escapeRegex(raw);
+    const noSpace = escaped.replace(/\s+/g, ''); // "노 드" → "노드"
+
+    query = {
+      $or: [
+        // 제목: 공백 제거 후 정규식 매칭 (네 코드 유지)
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $replaceAll: { input: "$title", find: " ", replacement: "" } },
+              regex: noSpace,
+              options: "i"
+            }
+          }
         },
-        regex: searchValue,
-        options: "i" 
-      }
-    }
-  }).toArray();
+        // 내용: 단순 부분 일치
+        { content: { $regex: escaped, $options: "i" } },
+        // 태그: 정확히 같은 단어일 때도 매칭
+        { tags_lc: raw.toLowerCase() }
+      ]
+    };
+  }
+
+  const posts = await db.collection('post').find(query).toArray();
 
   if (posts.length === 0) {
     return res.send(`<script>alert('검색 결과 없음'); history.back();</script>`);
@@ -318,6 +382,5 @@ app.get('/search', async (req, res) => {
 
   const isLogin = !!req.user;
   const user = req.user || null;
-
-  res.render('search', { posts, q: searchValue, isLogin, user });
+  return res.render('search', { posts, q: raw, isLogin, user });
 });
