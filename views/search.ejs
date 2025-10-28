@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>검색 결과</title>
+  <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <%- include('nav.ejs') %>
+
+  <!-- 검색 폼 -->
+  <form action="/search" method="GET" 
+        class="w-full max-w-pr-520 mx-auto flex items-center gap-pr-12 mt-pr-32 px-pr-16">
+    <input 
+      type="text" 
+      name="val" 
+      placeholder="검색어를 입력하세요..." 
+      value="<%= (typeof q === 'string' ? q : '') %>"
+      class="input flex-1"
+      autocomplete="off"
+    />
+    <button type="submit" class="btn btn-primary px-pr-24 h-pr-48 whitespace-nowrap">
+      검색
+    </button>
+  </form>
+
+  <!-- 헤더/요약 -->
+  <section class="max-w-6xl mx-auto px-4 mt-pr-24">
+    <h1 class="text-2xl font-bold">
+      검색어:
+      <span class="text-blue-600">"<%= (typeof q === 'string' && q.trim() ? q.trim() : '—') %>"</span>
+    </h1>
+    <p class="text-gray-500 mt-2">
+      총 <strong><%= Array.isArray(posts) ? posts.length : 0 %></strong>건
+    </p>
+  </section>
+
+  <!-- 결과 테이블 -->
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <% if (!posts || posts.length === 0) { %>
+      <div class="p-pr-24 bg-white rounded-lg border text-center">
+        <p class="text-gray-600">검색 결과가 없습니다.</p>
+        <a href="/list" class="inline-block mt-pr-16 text-blue-600 hover:underline">목록으로 돌아가기</a>
+      </div>
+    <% } else { %>
+      <table class="w-full border-collapse bg-white rounded-lg overflow-hidden">
+        <thead>
+          <tr class="bg-gray-100 text-left">
+            <th class="p-2">제목</th>
+            <th class="p-2">작성자</th>
+            <th class="p-2">작성일</th>
+            <th class="p-2 w-16">수정</th>
+            <th class="p-2 w-16">삭제</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% posts.forEach(function(post){ %>
+            <tr class="border-b hover:bg-gray-50">
+              <!-- 제목 -->
+              <td class="p-2">
+                <a href="/detail/<%= post._id %>" class="hover:underline font-medium break-words">
+                  <%= post.title %>
+                </a>
+              </td>
+
+              <!-- 작성자 -->
+              <td class="p-2"><%= post.authorName || '알 수 없음' %></td>
+
+              <!-- 작성일 -->
+              <td class="p-2">
+                <% if (post.createdAt) { %>
+                  <%= new Date(post.createdAt).toLocaleDateString() %>
+                <% } %>
+              </td>
+
+              <!-- 수정 -->
+              <td class="p-2 text-center">
+                <% const 내아이디 = user?._id ? String(user._id) : null; %>
+                <% if (isLogin && String(post.authorId) === 내아이디) { %>
+                  <a href="/edit/<%= post._id %>" class="text-blue-600 hover:underline">수정</a>
+                <% } %>
+              </td>
+
+              <!-- 삭제 -->
+              <td class="p-2 text-center">
+                <% if (isLogin && String(post.authorId) === 내아이디) { %>
+                  <button
+                    type="button"
+                    data-id="<%= post._id %>"
+                    class="delete text-red-600 hover:underline">
+                    삭제
+                  </button>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </main>
+
+  <script>
+    // 삭제 버튼 처리 (권한 있는 행만 버튼이 렌더됨)
+    document.querySelectorAll('.delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        if (!confirm('정말 삭제하시겠습니까?')) return;
+
+        try {
+          const res = await fetch(`/delete?docId=${encodeURIComponent(id)}`, { method: 'DELETE' });
+          const msg = await res.text();
+          alert(msg);
+          btn.closest('tr')?.remove();
+        } catch (e) {
+          console.error(e);
+          alert('삭제 중 오류가 발생했습니다.');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

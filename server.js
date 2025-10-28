@@ -292,9 +292,32 @@ app.post('/comment', 로그인확인, async (요청, 응답) => {
 });
 
 
-// app.get('/search', async (요청, 응답) => {
-//   let result = await db.collection('post').find({
-//     title: 요청.query.val
-//   }).toArray()
-//   응답.render('search.ejs', { posts : result})
-// });
+app.get('/search', async (req, res) => {
+  const searchValue = (req.query.val || '').trim();
+
+  if (!searchValue) {
+    return res.send(`<script>alert('검색어를 입력하세요'); history.back();</script>`);
+  }
+
+
+  const posts = await db.collection('post').find({
+    $expr: {
+      $regexMatch: {
+        input: {
+          $replaceAll: { input: "$title", find: " ", replacement: "" } 
+        },
+        regex: searchValue,
+        options: "i" 
+      }
+    }
+  }).toArray();
+
+  if (posts.length === 0) {
+    return res.send(`<script>alert('검색 결과 없음'); history.back();</script>`);
+  }
+
+  const isLogin = !!req.user;
+  const user = req.user || null;
+
+  res.render('search', { posts, q: searchValue, isLogin, user });
+});
