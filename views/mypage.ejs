@@ -4,23 +4,26 @@
   <meta charset="utf-8" />
   <title>마이페이지</title>
   <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
-
 </head>
-    <body class="white-bg">
-    <%- include('nav.ejs') %>
-    <main class="max-w-5xl mx-auto px-4 py-8">
-      <section class="card">
-        <h2 class="card-title mb-4"><%= me.username %>님의 마이페이지</h2>
-        <ul class="space-y-2">
-          <% myPosts.forEach(function(post){ %>
-            <li class="border-b py-2">
-              <a href="/detail/<%= post._id %>" class="link"><%= post.title %></a>
-            </li>
-          <% }) %>
-        </ul>
-      </section>
-    </main>
+<body class="white-bg bg-gray-50 text-gray-800">
+  <%- include('nav.ejs') %>
+  <main class="max-w-5xl mx-auto px-4 py-8 space-y-pr-20">
+    <section class="bg-white rounded-pr-16 border border-gray-200 p-pr-20 shadow-sm">
+      <div class="flex items-center justify-between mb-pr-16">
+        <h2 class="text-2xl font-semibold"><%= me.username %>님의 마이페이지</h2>
+        <a href="/profile/edit" class="px-pr-16 py-pr-8 bg-blue-600 text-white rounded-pr-8 text-14sb hover:bg-blue-700 transition">
+          프로필 등록 / 수정
+        </a>
+      </div>
 
-  </div>
+      <ul class="space-y-2">
+        <% myPosts.forEach(function(post){ %>
+          <li class="border-b py-2">
+            <a href="/detail/<%= post._id %>" class="text-blue-600 hover:underline"><%= post.title %></a>
+          </li>
+        <% }) %>
+      </ul>
+    </section>
+  </main>
 </body>
 </html>

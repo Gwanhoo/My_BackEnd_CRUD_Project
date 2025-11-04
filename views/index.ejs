@@ -9,12 +9,55 @@
 <body class="min-h-dvh bg-gray-50 text-gray-800">
   <%- include('nav.ejs') %>
 
-  <main class="max-w-5xl mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold">코사모에 오신 걸 환영합니다 👋</h1>
-    <p class="mt-2 text-gray-600">조건에 맞는 팀원과 스터디를 찾아보세요.</p>
-    <div class="mt-6">
-      <a href="/list" class="btn btn-primary">사람들 보기</a>
-    </div>
+  <main class="max-w-5xl mx-auto px-4 py-12 space-y-pr-28">
+
+    <!-- 1️⃣ 첫 번째 박스 -->
+    <section class="bg-white rounded-pr-16 border border-gray-200 shadow-[0_4px_12px_rgba(0,0,0,0.03)] p-pr-24">
+      <h1 class="text-3xl font-bold tracking-tight">코사모에 오신 걸 환영합니다 👋</h1>
+      <p class="mt-pr-8 text-gray-600 text-16m">
+        조건에 맞는 팀원과 스터디를 찾아보세요.
+      </p>
+      <div class="mt-pr-24 flex justify-start">
+        <a href="/list" 
+           class="px-pr-24 py-pr-12 bg-blue-600 text-white rounded-pr-10 text-16sb hover:bg-blue-700 transition">
+          사람들 보기
+        </a>
+      </div>
+    </section>
+
+    <section class="flex justify-end">
+      <div class="bg-white rounded-pr-16 border border-gray-200 shadow-[0_4px_12px_rgba(0,0,0,0.03)] p-pr-24 w-full tamo:w-3/5 text-right">
+        <h2 class="text-2xl font-semibold text-gray-900">새로운 사람 찾기</h2>
+        <p class="mt-pr-6 text-gray-600 text-16m">
+          관심 분야, 기술스택으로 필터링해서 팀원을 찾아요.
+        </p>
+        <div class="mt-pr-24 flex justify-end">
+          <a href="/people"
+            class="px-pr-24 py-pr-12 bg-white text-blue-600 rounded-pr-10 text-16sb border border-blue-200 hover:bg-blue-50 transition inline-flex items-center gap-pr-6">
+            가입한 사람들 보기
+            <span class="text-sm">→</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- 3️⃣ 세 번째 박스 -->
+    <section>
+      <div class="bg-white rounded-pr-16 border border-gray-200 shadow-[0_4px_12px_rgba(0,0,0,0.03)] p-pr-24 w-full tamo:w-3/5">
+        <h2 class="text-2xl font-semibold text-gray-900">실시간 대화</h2>
+        <p class="mt-pr-6 text-gray-600 text-16m">
+          채팅방 리스트에서 바로 이어서 대화할 수 있어요.
+        </p>
+        <div class="mt-pr-24 flex justify-start">
+          <a href="/chat/list"
+             class="px-pr-24 py-pr-12 bg-gray-800 text-white rounded-pr-10 text-16sb hover:bg-gray-900 transition">
+            대화방 들어가기
+          </a>
+        </div>
+      </div>
+    </section>
+
   </main>
 </body>
 </html>

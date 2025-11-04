@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>사람 찾기 - 코사모</title>
+  <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
+</head>
+<body class="min-h-dvh bg-gray-50 text-gray-800">
+  <%- include('nav.ejs') %>
+
+  <main class="max-w-5xl mx-auto px-4 py-10">
+    <div class="flex items-center justify-between mb-pr-20">
+      <h1 class="text-2xl font-semibold">가입한 사람들</h1>
+      <p class="text-14m text-gray-500">조건 검색은 나중에 붙일 수 있어요.</p>
+    </div>
+
+    <% if (people.length === 0) { %>
+      <p class="text-center text-gray-400 py-pr-32">아직 등록된 프로필이 없습니다.</p>
+    <% } else { %>
+      <div class="grid tamo:grid-cols-2 gap-pr-16">
+        <% people.forEach(function(person) { %>
+          <article class="bg-white rounded-pr-14 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.05)] p-pr-16 flex flex-col gap-pr-10">
+            <div class="flex items-center gap-pr-10">
+              <div class="w-pr-40 h-pr-40 rounded-full bg-blue-100 flex items-center justify-center text-16sb text-blue-600">
+                <%= person.name ? person.name.slice(0,1) : "유" %>
+              </div>
+              <div>
+                <h2 class="text-16sb text-gray-900"><%= person.name || '이름 없음' %></h2>
+                <p class="text-14m text-gray-500"><%= person.role || '관심 분야 미입력' %></p>
+              </div>
+            </div>
+
+            <% if (person.intro) { %>
+              <p class="text-14m text-gray-700 leading-relaxed"><%= person.intro %></p>
+            <% } %>
+
+            <% if (person.stacks && person.stacks.length > 0) { %>
+              <div class="flex flex-wrap gap-pr-6">
+                <% person.stacks.forEach(function(stack) { %>
+                  <span class="px-pr-10 py-pr-4 bg-blue-50 text-blue-600 rounded-pr-6 text-12sb">
+                    <%= stack %>
+                  </span>
+                <% }) %>
+              </div>
+            <% } %>
+            <% if (isLogin && String(person.userId) !== String(user._id)) { %>
+            <div class="mt-auto flex justify-end">
+              <a 
+                href="/chat/request?writerId=<%= person.userId %>"
+                class="px-pr-14 py-pr-8 bg-blue-600 text-white rounded-pr-8 text-14sb hover:bg-blue-700 transition">
+                채팅하기
+              </a>
+            </div>
+            <% } %>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
+  </main>
+</body>
+</html>

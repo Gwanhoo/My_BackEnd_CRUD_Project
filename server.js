@@ -384,3 +384,108 @@ app.get('/search', async (req, res) => {
   const user = req.user || null;
   return res.render('search', { posts, q: raw, isLogin, user });
 });
+
+app.get("/chat/request", 로그인확인, async (req, res) => {
+  // writerId, writer_id 둘 다 받아줌 (앞에서 이름을 섞어썼으니까)
+  const targetIdRaw = req.query.writerId || req.query.writer_id;
+  if (!targetIdRaw) {
+    return res.status(400).send("채팅할 대상이 없습니다.");
+  }
+
+  const me = req.user._id;
+  const targetId = new ObjectId(targetIdRaw);
+
+  // ✅ 자기 자신과는 채팅방 만들지 않기
+  if (String(me) === String(targetId)) {
+    return res.send("<script>alert('자기 자신과는 채팅할 수 없습니다.'); history.back();</script>");
+  }
+
+  // ✅ 이미 방 있는지 확인
+  const existingRoom = await db.collection("chatroom").findOne({
+    member: { $all: [me, targetId] }
+  });
+
+  if (existingRoom) {
+    return res.redirect(`/chat/room/${existingRoom._id}`);
+  }
+
+  // ✅ 없으면 새로 생성
+  const result = await db.collection("chatroom").insertOne({
+    member: [me, targetId],
+    date: new Date()
+  });
+
+  return res.redirect(`/chat/room/${result.insertedId}`);
+});
+
+app.get("/chat/room/:id", 로그인확인, async (요청, 응답) => {
+  const room = await db.collection("chatroom").findOne({
+    _id: new ObjectId(요청.params.id),
+    member: 요청.user._id,
+  });
+
+  if (!room) {
+    return 응답.status(404).send("채팅방을 찾을 수 없습니다.");
+  }
+
+  응답.render("chatRoom.ejs", { room });
+});
+
+app.get("/chat/list", 로그인확인, async(요청, 응답) => {
+  let chatrooms = await db.collection('chatroom').find({ member : 요청.user._id}).toArray()
+  응답.render('chatList.ejs', { chatrooms : chatrooms})
+});
+
+// 프로필 작성 화면
+app.get('/profile/edit', 로그인확인, async (req, res) => {
+  const userId = req.user._id;
+  const profile = await db.collection('people').findOne({ userId: userId });
+  res.render('profileEdit.ejs', { me: req.user, profile });
+});
+
+// 프로필 저장
+app.post('/profile/edit', 로그인확인, async (req, res) => {
+  const userId = req.user._id;
+
+  const data = {
+    userId: userId,
+    name: req.body.name,
+    age: req.body.age ? Number(req.body.age) : null,
+    school: req.body.school,
+    hobby: req.body.hobby,
+    intro: req.body.intro,
+    stacks: req.body.stacks
+      ? req.body.stacks.split(',').map(s => s.trim()).filter(Boolean)
+      : [],
+    updatedAt: new Date()
+  };
+
+  const exist = await db.collection('people').findOne({ userId: userId });
+
+  if (exist) {
+    await db.collection('people').updateOne(
+      { userId: userId },
+      { $set: data }
+    );
+  } else {
+    data.createdAt = new Date();
+    await db.collection('people').insertOne(data);
+  }
+
+  res.redirect('/people'); // 저장 후 사람 목록으로 보내거나 /mypage 로 보내도 됨
+});
+
+// 📍 people 목록 조회
+app.get("/people", async (req, res) => {
+  try {
+    const people = await db.collection("people")
+      .find({})
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    res.render("people.ejs", { people });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("프로필 목록을 불러오는 중 오류가 발생했습니다.");
+  }
+});

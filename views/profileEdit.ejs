@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>프로필 등록/수정</title>
+  <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <%- include('nav.ejs') %>
+
+  <main class="max-w-3xl mx-auto px-4 py-10">
+    <h1 class="text-2xl font-semibold mb-pr-20">프로필 등록 / 수정</h1>
+
+    <form action="/profile/edit" method="POST" class="bg-white rounded-pr-16 border border-gray-200 p-pr-20 space-y-pr-16">
+      <div>
+        <label class="block text-14sb mb-pr-6">이름</label>
+        <input name="name" value="<%= profile?.name || me.username %>" class="w-full border-pr-1 border-gray-300 rounded-pr-8 px-pr-12 h-pr-40 focus:outline-none focus:border-blue-500">
+      </div>
+
+      <div>
+        <label class="block text-14sb mb-pr-6">나이</label>
+        <input name="age" type="number" value="<%= profile?.age || '' %>" class="w-full border-pr-1 border-gray-300 rounded-pr-8 px-pr-12 h-pr-40">
+      </div>
+
+      <div>
+        <label class="block text-14sb mb-pr-6">학교</label>
+        <input name="school" value="<%= profile?.school || '' %>" class="w-full border-pr-1 border-gray-300 rounded-pr-8 px-pr-12 h-pr-40">
+      </div>
+
+      <div>
+        <label class="block text-14sb mb-pr-6">기술 스택</label>
+        <input name="stacks" placeholder="React, Node.js, MongoDB" value="<%= profile?.stacks ? profile.stacks.join(', ') : '' %>" class="w-full border-pr-1 border-gray-300 rounded-pr-8 px-pr-12 h-pr-40">
+        <p class="text-12m text-gray-400 mt-pr-4">쉼표(,)로 구분해서 입력</p>
+      </div>
+
+      <div>
+        <label class="block text-14sb mb-pr-6">취미</label>
+        <input name="hobby" value="<%= profile?.hobby || '' %>" class="w-full border-pr-1 border-gray-300 rounded-pr-8 px-pr-12 h-pr-40">
+      </div>
+
+      <div>
+        <label class="block text-14sb mb-pr-6">소개글</label>
+        <textarea name="intro" rows="4" class="w-full border-pr-1 border-gray-300 rounded-pr-8 px-pr-12 py-pr-8"><%= profile?.intro || '' %></textarea>
+      </div>
+
+      <div class="pt-pr-10 flex justify-end gap-pr-8">
+        <a href="/mypage" class="px-pr-14 py-pr-8 bg-gray-200 rounded-pr-8 text-14m">돌아가기</a>
+        <button type="submit" class="px-pr-16 py-pr-8 bg-blue-600 text-white rounded-pr-8 text-14sb hover:bg-blue-700 transition">
+          저장
+        </button>
+      </div>
+    </form>
+  </main>
+</body>
+</html>
