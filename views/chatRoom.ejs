@@ -1,29 +1,137 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>채팅방</title>
   <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
 </head>
 <body class="bg-gray-50 text-gray-800">
-  <main class="max-w-3xl mx-auto py-10">
-    <h1 class="text-2xl font-semibold mb-6">채팅방</h1>
-    <div id="chatBox" class="bg-white border rounded-lg h-[400px] overflow-y-auto p-4 mb-4"></div>
+  <%- include('nav.ejs') %>
 
-    <form id="chatForm" class="flex gap-2">
-      <input 
+  <main class="max-w-3xl mx-auto px-4 py-10">
+    <h1 class="text-2xl font-semibold mb-pr-16 flex items-center gap-pr-8">
+      💬 채팅방
+    </h1>
+
+    <!-- 채팅 메시지 박스 -->
+    <div id="chatBox"
+         class="bg-white border rounded-pr-12 h-[400px] overflow-y-auto p-pr-12 space-y-pr-8 mb-pr-12 shadow-sm">
+      <% if (messages && messages.length > 0) { %>
+        <% messages.forEach(m => { %>
+          <div class="flex <%= String(m.senderId) === String(user._id) ? 'justify-end' : 'justify-start' %>">
+            <div
+              class="<%= String(m.senderId) === String(user._id)
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-800' %>
+                     px-pr-10 py-pr-6 rounded-pr-10 max-w-[70%] break-words">
+              <%= m.message %>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+
+    <!-- 메시지 입력 -->
+    <form id="chatForm" class="flex gap-pr-10">
+      <input
         id="msgInput"
         type="text"
-        class="flex-1 border rounded-lg px-4 py-2"
         placeholder="메시지를 입력하세요..."
+        class="flex-1 border-pr-1 border-gray-300 rounded-pr-8 px-pr-10 h-pr-40 focus:outline-none focus:border-blue-500"
+        autocomplete="off"
       />
       <button
         type="submit"
-        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-      >
+        class="px-pr-16 h-pr-40 bg-blue-600 text-white rounded-pr-8 hover:bg-blue-700 transition">
         보내기
       </button>
     </form>
   </main>
+
+  <!-- socket.io 클라이언트 -->
+<!-- socket.io 클라이언트 -->
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  // 이미 만들어진 소켓이 있으면 재사용, 없으면 새로 만들기
+  const socket = window.socket || io();
+  window.socket = socket; // 전역에 보관해서 중복 생성 방지
+
+  const roomId = "<%= room._id %>";
+  const myId = "<%= user._id %>";
+
+  const chatBox = document.getElementById('chatBox');
+  const chatForm = document.getElementById('chatForm');
+  const msgInput = document.getElementById('msgInput');
+
+  // 처음 들어왔을 때도 맨 아래로
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  // 소켓이 이미 연결돼 있으면 바로 방 입장
+  if (socket.connected) {
+    socket.emit('join-room', roomId);
+  } else {
+    // 아직이면 연결 후에 한 번만 방 입장
+    socket.once('connect', () => {
+      socket.emit('join-room', roomId);
+    });
+  }
+
+  // 혹시 이전 페이지에서 달려있던 리스너가 있으면 제거
+  socket.off('chat-message');
+
+  // 서버에서 받은 메시지 그리기 (이건 내 메시지 말고, 다른 사람 메시지가 들어옴)
+  socket.on('chat-message', (data) => {
+    addMessage(data);
+  });
+
+  // 폼 전송하면 내가 먼저 화면에 그리고 서버로 보냄
+  chatForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const msg = msgInput.value.trim();
+    if (!msg) return;
+
+    // 1) 내 화면에 바로 그리기
+    addMessage({
+      senderId: myId,
+      message: msg
+    });
+
+    // 2) 서버로 보내기
+    socket.emit('chat-message', {
+      roomId,
+      senderId: myId,
+      message: msg
+    });
+
+    msgInput.value = '';
+    msgInput.focus();
+  });
+
+  // 공용 메시지 렌더 함수
+  function addMessage(data) {
+    const wrap = document.createElement('div');
+    const isMe = (data.senderId === myId);
+
+    wrap.className = 'flex ' + (isMe ? 'justify-end' : 'justify-start');
+
+    const bubble = document.createElement('div');
+    bubble.className = (isMe
+      ? 'bg-blue-600 text-white'
+      : 'bg-gray-200 text-gray-800'
+    ) + ' px-pr-10 py-pr-6 rounded-pr-10 max-w-[70%] break-words';
+
+    bubble.textContent = data.message;
+
+    wrap.appendChild(bubble);
+    chatBox.appendChild(wrap);
+
+    // 항상 맨 아래로
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+</script>
+
+
+
 </body>
 </html>

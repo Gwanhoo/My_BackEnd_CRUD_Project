@@ -7,10 +7,12 @@ const passport = require('passport')
 const LocalStrategy = require('passport-local')
 const bcrypt = require('bcrypt') 
 const MongoStore = require('connect-mongo')
+const { Server } = require('socket.io'); 
 require('dotenv').config();
+const http = require('http');
 
-
-
+const server = http.createServer(app);
+const io = new Server(server);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(passport.initialize())
@@ -42,6 +44,8 @@ new MongoClient(url).connect()
   .catch((err) => {
     console.error('[DB ERROR]', err);
   });
+
+
 
 app.use((요청, 응답, next) => {
   응답.locals.isLogin = 요청.isAuthenticated && 요청.isAuthenticated();
@@ -84,10 +88,14 @@ function 작성자확인(컬렉션명 = 'post') {
 }
 
 
-app.listen(8080, () => {
-    console.log("http://localhost:8080 에서 서버 실행중");
+// app.listen(8080, () => {
+//     console.log("http://localhost:8080 에서 서버 실행중");
 
-})
+// })
+
+server.listen(8080, () => {
+  console.log('http://localhost:8080 에서 서버 실행중');
+});
 
 app.get('/', (요청, 응답) => {
     응답.render('index.ejs')
@@ -418,17 +426,29 @@ app.get("/chat/request", 로그인확인, async (req, res) => {
   return res.redirect(`/chat/room/${result.insertedId}`);
 });
 
-app.get("/chat/room/:id", 로그인확인, async (요청, 응답) => {
+app.get("/chat/room/:id", 로그인확인, async (req, res) => {
+  const roomId = req.params.id;
+
   const room = await db.collection("chatroom").findOne({
-    _id: new ObjectId(요청.params.id),
-    member: 요청.user._id,
+    _id: new ObjectId(roomId),
+    member: req.user._id
   });
 
   if (!room) {
-    return 응답.status(404).send("채팅방을 찾을 수 없습니다.");
+    return res.status(404).send("채팅방을 찾을 수 없습니다.");
   }
 
-  응답.render("chatRoom.ejs", { room });
+  // 기존 메시지 불러오기 (선택 사항)
+  const messages = await db.collection("messages")
+    .find({ roomId: new ObjectId(roomId) })
+    .sort({ date: 1 })
+    .toArray();
+
+  res.render("chatRoom.ejs", {
+    room,
+    messages,
+    user: req.user
+  });
 });
 
 app.get("/chat/list", 로그인확인, async(요청, 응답) => {
@@ -488,4 +508,29 @@ app.get("/people", async (req, res) => {
     console.error(err);
     res.status(500).send("프로필 목록을 불러오는 중 오류가 발생했습니다.");
   }
+});
+
+io.on('connection', (socket) => {
+  console.log('🟢 socket connected :', socket.id);
+
+  // 방 입장
+  socket.on('join-room', (roomId) => {
+    socket.join(roomId);
+    console.log('room joined:', roomId);
+  });
+
+  // 메시지 받기
+  socket.on('chat-message', async (data) => {
+    console.log('💬 받은 메시지:', data);
+
+    await db.collection('messages').insertOne({
+      roomId: new ObjectId(data.roomId),
+      senderId: new ObjectId(data.senderId),
+      message: data.message,
+      date: new Date()
+    });
+
+    // 나 빼고 같은 방 사람한테만 방송
+    socket.to(data.roomId).emit('chat-message', data);
+  });
 });
