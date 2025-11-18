@@ -13,86 +13,117 @@
   <!-- 서버에서 result 로 넘겨 받은 값을 p로 통일 -->
   <% const p = (typeof post !== 'undefined' && post) ? post : result; %>
 
-  <main class="max-w-3xl mx-auto px-4 py-8">
-    <article class="card">
-      <h1 class="card-title text-2xl"><%= p.title %></h1>
-
-      <p class="text-sm text-gray-500 mt-1">
-        작성자: <%= p.authorName || '알 수 없음' %>
-        <% if (p.createdAt) { %> · <%= new Date(p.createdAt).toLocaleString() %><% } %>
-      </p> 
-      <% if (p.tags && p.tags.length > 0) { %>
-        <div class="mt-4 flex flex-wrap gap-pr-8">
-        <% p.tags.forEach(tag => { %>
-            <a href="/search?keyword=%23<%= encodeURIComponent(tag) %>" 
-              class="px-pr-12 py-pr-4 bg-gray-200 text-gray-700 rounded-pr-8 text-14m hover:bg-gray-300 transition">
-              #<%= tag %>
-            </a>
-          <% }) %>
-        </div>
-      <% } %>
-      <div class="card-body whitespace-pre-line mt-4"><%= p.content %></div>
-
+    <main class="max-w-3xl mx-auto px-4 py-8">
+    <!-- 전체 카드 -->
+    <article class="bg-white border-pr-1 border-gray-200 rounded-pr-16 shadow-[0_4px_12px_rgba(0,0,0,0.05)] p-pr-24 space-y-pr-24">
       <% const 내아이디 = user?._id ? String(user._id) : null; %>
-      <div class="card-actions justify-end">
-        <% if (isLogin && String(p.authorId) === 내아이디) { %>
-          <a href="/edit/<%= p._id %>" class="btn btn-primary">수정</a>
-          <button
-            id="deleteBtn"
-            data-id="<%= p._id %>"
-            class="btn bg-red-600 text-white hover:bg-red-700">
-            삭제
-          </button>
+
+      <!-- 1. 제목 박스 -->
+      <section class="border-pr-1 border-gray-300 rounded-pr-12 bg-gray-50 px-pr-20 py-pr-16">
+        <h1 class="text-20sb text-gray-900 break-words"><%= p.title %></h1>
+
+        <div class="mt-pr-8 flex flex-wrap items-center justify-between gap-pr-8 text-14m text-gray-500">
+          <span>
+            작성자: <span class="text-gray-700"><%= p.authorName || '알 수 없음' %></span>
+          </span>
+
+          <% if (p.createdAt) { %>
+            <span><%= new Date(p.createdAt).toLocaleString() %></span>
+          <% } %>
+        </div>
+      </section>
+
+      <!-- 2. 내용(태그 포함) 큰 박스 -->
+      <section class="border-pr-1 border-gray-300 rounded-pr-12 bg-white px-pr-32 py-pr-32">
+        <% if (p.tags && p.tags.length > 0) { %>
+          <div class="mb-pr-20 flex flex-wrap gap-pr-8">
+            <% p.tags.forEach(tag => { %>
+              <a
+                href="/search?keyword=%23<%= encodeURIComponent(tag) %>"
+                class="px-pr-12 py-pr-4 bg-gray-100 text-gray-700 rounded-pr-8 text-14m hover:bg-gray-200 transition"
+              >
+                #<%= tag %>
+              </a>
+            <% }) %>
+          </div>
         <% } %>
 
-        <% if (isLogin && String(p.authorId) !== 내아이디) { %>
-        <a 
-          href="/chat/request?writerId=<%= p.authorId %>"
-          class="px-pr-20 py-pr-10 rounded-pr-8 
-                text-16sb text-white 
-                bg-b-primary hover:bg-b-primary/80 
-                active:translate-y-pr-1
-                drop-shadow-[0_1px_3px_rgba(0,0,0,0.15)]
-                transition-all duration-150">
-          채팅하기
-        </a>
-        <% } %>
+        <div class="whitespace-pre-line text-16m text-gray-800 leading-[1.85] min-h-pr-320 break-words">
+          <%= p.content %>
+        </div>
+      </section>
 
-        <a href="/list" class="btn btn-ghost">목록</a>
-      </div>
+
+
+     <!-- 3. 추천 / 반대 버튼 (가운데 작은 박스 2개 + 숫자) -->
+      <section class="flex justify-center gap-pr-48 mt-pr-32">
+
+        <!-- 추천 박스 -->
+        <button
+          id="upvoteBtn"
+          type="button"
+          class="flex items-center justify-center gap-pr-12
+                px-pr-16 py-pr-16
+                border-pr-1 border-gray-400 rounded-pr-8
+                bg-gray-900 text-gray-200
+                hover:bg-gray-800 transition-all"
+        >
+          <span class="text-16sb">▲</span>
+          <span id="likeCount" class="text-16m"><%= p.likeCount || 0 %></span>
+        </button>
+
+        <!-- 반대 박스 -->
+        <button
+          id="downvoteBtn"
+          type="button"
+          class="flex items-center justify-center gap-pr-12
+                px-pr-16 py-pr-16
+                border-pr-1 border-gray-400 rounded-pr-8
+                bg-gray-900 text-gray-200
+                hover:bg-gray-800 transition-all"
+        >
+          <span class="text-16sb">▼</span>
+          <span id="dislikeCount" class="text-16m"><%= p.dislikeCount || 0 %></span>
+        </button>
+
+      </section>
+
+
 
 
     </article>
-    <hr class="my-pr-32 border-gray-300" />
 
-    <div class="max-w-3xl mx-auto mt-pr-24 space-y-pr-16">
-      <p class="text-16m text-gray-700">
-        <strong class="font-semibold text-gray-900">작성자</strong>
-        <span class="ml-pr-8 text-gray-500">댓글내용</span>
-      </p>
+    <!-- 5. 맨 아래 큰 댓글 박스 -->
+    <section class="mt-pr-32 border-pr-1 border-gray-300 rounded-pr-16 bg-white px-pr-24 py-pr-24 space-y-pr-16">
+      <h2 class="text-18sb text-gray-900 mb-pr-4">댓글</h2>
 
+      <!-- 댓글 입력 -->
       <form action="/comment" method="POST" class="flex items-center gap-pr-12">
         <input 
           name="content"
           type="text" 
           placeholder="댓글을 입력하세요..."
-          class="flex-1 h-pr-48 px-pr-16 text-16m border-pr-1 border-gray-300 rounded-pr-8 focus:outline-none focus:border-b-primary shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+          class="flex-1 h-pr-48 px-pr-16 text-16m border-pr-1 border-gray-300 rounded-pr-8
+                 focus:outline-none focus:border-b-primary
+                 shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
         >
         <input type="hidden" name="parentId" value="<%= p._id %>">
         
         <button
           type="submit"
-          class="h-pr-48 px-pr-24 rounded-pr-8 text-white text-16sb bg-blue-600 hover:bg-blue-700 active:translate-y-pr-1 transition-all"
+          class="h-pr-48 px-pr-24 rounded-pr-8 text-white text-16sb
+                 bg-blue-600 hover:bg-blue-700 active:translate-y-pr-1 transition-all"
         >
           댓글작성
         </button>
-
-
       </form>
-      <!-- 댓글 입력 폼 바로 아래 -->
-      <ul class="max-w-3xl mx-auto mt-pr-24 space-y-pr-12">
+
+      <!-- 댓글 리스트 -->
+      <ul class="mt-pr-16 space-y-pr-12">
         <% if (result1.length === 0) { %>
-          <li class="text-gray-500 text-center text-16m py-pr-24">아직 댓글이 없습니다.</li>
+          <li class="text-gray-500 text-center text-16m py-pr-24">
+            아직 댓글이 없습니다.
+          </li>
         <% } else { %>
           <% result1.forEach(function(c) { %>
             <li class="border-pr-1 border-gray-200 bg-white rounded-pr-8 p-pr-16 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
@@ -117,27 +148,78 @@
           <% }) %>
         <% } %>
       </ul>
-
-      
-    </div>
-
+    </section>
   </main>
 
+
   <% /* 삭제 요청 (본인만 보이므로 버튼이 있을 때만 동작) */ %>
-  <script>
-    const del = document.getElementById('deleteBtn');
-    if (del) {
-      del.addEventListener('click', () => {
-        const id = del.dataset.id;
-        fetch(`/delete?docId=${id}`, { method: 'DELETE' })
-          .then(r => r.text())
-          .then(msg => {
-            alert(msg);
-            location.href = '/list';
-          })
-          .catch(console.error);
-      });
+<script>
+  // 삭제 버튼
+  const del = document.getElementById('deleteBtn');
+  if (del) {
+    del.addEventListener('click', () => {
+      const id = del.dataset.id;
+      fetch(`/delete?docId=${id}`, { method: 'DELETE' })
+        .then(r => r.text())
+        .then(msg => {
+          alert(msg);
+          location.href = '/list';
+        })
+        .catch(console.error);
+    });
+  }
+
+
+
+  const upBtn = document.getElementById('upvoteBtn');
+  const downBtn = document.getElementById('downvoteBtn');
+  const likeSpan = document.getElementById('likeCount');
+  const dislikeSpan = document.getElementById('dislikeCount');
+  const postId = '<%= p._id %>';
+
+  function applyVoteStyle(vote) {
+    // 기본 초기화
+    upBtn.classList.remove('bg-b-primary', 'border-b-primary', 'text-white');
+    downBtn.classList.remove('bg-red-600', 'border-red-600', 'text-white');
+
+    upBtn.classList.add('bg-gray-900', 'text-gray-200', 'border-gray-400');
+    downBtn.classList.add('bg-gray-900', 'text-gray-200', 'border-gray-400');
+
+    if (vote === 'up') {
+      upBtn.classList.remove('bg-gray-900', 'border-gray-400');
+      upBtn.classList.add('bg-b-primary', 'border-b-primary', 'text-white');
     }
-  </script>
+    if (vote === 'down') {
+      downBtn.classList.remove('bg-gray-900', 'border-gray-400');
+      downBtn.classList.add('bg-red-600', 'border-red-600', 'text-white');
+    }
+  }
+
+  function sendVote(type) {
+    fetch(`/post/${postId}/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type })
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.ok) return alert('오류 발생');
+
+        likeSpan.textContent = data.likeCount;
+        dislikeSpan.textContent = data.dislikeCount;
+
+        applyVoteStyle(data.userVote);
+      })
+      .catch(err => console.error(err));
+  }
+
+  if (upBtn && downBtn) {
+    upBtn.addEventListener('click', () => sendVote('up'));
+    downBtn.addEventListener('click', () => sendVote('down'));
+  }
+
+</script>
+
+  
 </body>
 </html>

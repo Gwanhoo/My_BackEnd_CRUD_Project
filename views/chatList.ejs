@@ -23,7 +23,9 @@
                      hover:bg-gray-50 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
             <a href="/chat/room/<%= room._id %>" class="flex justify-between items-center">
               <div>
-                <p class="text-16sb text-gray-900">채팅방 ID: <%= room._id %></p>
+                <p class="text-16sb text-gray-900"><%= room.name || '채팅방' %></p>
+
+
                 <% if (room.date) { %>
                   <p class="text-14m text-gray-400 mt-pr-4">
                     생성일: <%= new Date(room.date).toLocaleString() %>

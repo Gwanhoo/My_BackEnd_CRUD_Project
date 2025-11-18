@@ -10,46 +10,72 @@
   <%- include('nav.ejs') %>
 
   <main class="max-w-3xl mx-auto px-4 py-10">
-    <h1 class="text-2xl font-semibold mb-pr-16 flex items-center gap-pr-8">
-      💬 채팅방
-    </h1>
 
-    <!-- 채팅 메시지 박스 -->
-    <div id="chatBox"
-         class="bg-white border rounded-pr-12 h-[400px] overflow-y-auto p-pr-12 space-y-pr-8 mb-pr-12 shadow-sm">
-      <% if (messages && messages.length > 0) { %>
-        <% messages.forEach(m => { %>
-          <div class="flex <%= String(m.senderId) === String(user._id) ? 'justify-end' : 'justify-start' %>">
-            <div
-              class="<%= String(m.senderId) === String(user._id)
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-800' %>
-                     px-pr-10 py-pr-6 rounded-pr-10 max-w-[70%] break-words">
-              <%= m.message %>
+    <!-- 전체 통합 박스 -->
+    <div class="bg-white border border-gray-300 rounded-pr-16 shadow-sm overflow-hidden">
+
+      <!-- 1) 헤더 -->
+      <div class="flex items-center justify-between px-pr-20 py-pr-16 border-b border-gray-200 bg-white">
+        
+        <!-- 수정 -->
+        <button id="editRoomNameBtn" class="text-blue-600 text-16sb">
+          수정
+        </button>
+
+        <!-- 채팅방 이름 (중앙 고정) -->
+        <div class="flex-1 text-center">
+          <span id="roomName" class="text-18sb text-gray-900">
+            <%= room.name || '채팅방' %>
+          </span>
+        </div>
+
+        <!-- 돌아가기 -->
+        <a href="/chat/list" class="text-blue-600 text-16sb">
+          돌아가기 →
+        </a>
+
+      </div>
+
+      <!-- 2) 채팅창 -->
+      <div id="chatBox"
+          class="h-[400px] overflow-y-auto px-pr-16 py-pr-12 space-y-pr-10 bg-white">
+        <% if (messages && messages.length > 0) { %>
+          <% messages.forEach(m => { %>
+            <div class="flex <%= String(m.senderId) === String(user._id) ? 'justify-end' : 'justify-start' %>">
+              <div
+                class="<%= String(m.senderId) === String(user._id)
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-800' %>
+                      px-pr-12 py-pr-6 rounded-pr-10 max-w-[70%] break-words">
+                <%= m.message %>
+              </div>
             </div>
-          </div>
-        <% }) %>
-      <% } %>
+          <% }) %>
+        <% } %>
+      </div>
+
+      <!-- 3) 입력창 -->
+      <form id="chatForm" class="flex items-center gap-pr-10 border-t border-gray-200 px-pr-16 py-pr-12 bg-white">
+        <input
+          id="msgInput"
+          type="text"
+          placeholder="메시지를 입력하세요..."
+          class="flex-1 h-pr-44 px-pr-12 border-pr-1 border-gray-300 rounded-pr-8 
+                focus:outline-none focus:border-blue-500"
+          autocomplete="off"
+        />
+        <button
+          type="submit"
+          class="px-pr-20 h-pr-44 bg-blue-600 text-white rounded-pr-8 hover:bg-blue-700 transition">
+          보내기
+        </button>
+      </form>
+
     </div>
 
-    <!-- 메시지 입력 -->
-    <form id="chatForm" class="flex gap-pr-10">
-      <input
-        id="msgInput"
-        type="text"
-        placeholder="메시지를 입력하세요..."
-        class="flex-1 border-pr-1 border-gray-300 rounded-pr-8 px-pr-10 h-pr-40 focus:outline-none focus:border-blue-500"
-        autocomplete="off"
-      />
-      <button
-        type="submit"
-        class="px-pr-16 h-pr-40 bg-blue-600 text-white rounded-pr-8 hover:bg-blue-700 transition">
-        보내기
-      </button>
-    </form>
   </main>
 
-  <!-- socket.io 클라이언트 -->
+
 <!-- socket.io 클라이언트 -->
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -129,6 +155,33 @@
     // 항상 맨 아래로
     chatBox.scrollTop = chatBox.scrollHeight;
   }
+</script>
+
+<script>
+  const editBtn = document.getElementById('editRoomNameBtn');
+  const roomNameSpan = document.getElementById('roomName');
+
+  editBtn.addEventListener('click', () => {
+    const newName = prompt("새 채팅방 이름을 입력하세요:", roomNameSpan.textContent);
+    if (!newName) return;
+
+    fetch(`/chat/room/<%= room._id %>/rename`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name: newName })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.ok) {
+        roomNameSpan.textContent = newName; // 화면 즉시 반영
+        alert("채팅방 이름이 변경되었습니다!");
+      } else {
+        alert("변경 실패");
+      }
+    });
+  });
 </script>
 
 

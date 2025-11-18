@@ -144,27 +144,33 @@ app.post('/add', 로그인확인, async (요청, 응답) => {
     if (!content) return 응답.status(400).send('내용을 입력하세요.');
     if (!요청.user) return 응답.status(401).send('로그인이 필요합니다.');
 
-
     const tags = parseTags(rawTags);
-    const tags_lc = tags.map(t => t.toLowerCase()); // 검색용(대소문자 무시)
+    const tags_lc = tags.map(t => t.toLowerCase());
 
     const doc = {
       title,
       content,
-      tags,                 // 표시용 태그(원본 케이스 유지)
-      tags_lc,              // 검색 최적화용 소문자 태그
+      tags,
+      tags_lc,
       authorId: 요청.user._id,
       authorName: 요청.user.username,
       createdAt: new Date(),
+      likeCount: 0,
+      dislikeCount: 0,
+      likedBy: [],
+      dislikedBy: []
     };
 
+    // ⭐⭐⭐ 이 doc을 몽고DB에 저장 ⭐⭐⭐
     await db.collection('post').insertOne(doc);
+
     return 응답.redirect('/list');
   } catch (err) {
     console.error('POST /add error:', err);
     return 응답.status(500).send('서버 오류가 발생했습니다.');
   }
 });
+
 
 app.get('/detail/:id', async (요청, 응답) => {
   
@@ -420,7 +426,8 @@ app.get("/chat/request", 로그인확인, async (req, res) => {
   // ✅ 없으면 새로 생성
   const result = await db.collection("chatroom").insertOne({
     member: [me, targetId],
-    date: new Date()
+    date: new Date(),
+    name: "새 채팅방"
   });
 
   return res.redirect(`/chat/room/${result.insertedId}`);
@@ -533,4 +540,118 @@ io.on('connection', (socket) => {
     // 나 빼고 같은 방 사람한테만 방송
     socket.to(data.roomId).emit('chat-message', data);
   });
+});
+
+
+
+// ✅ 글 추천 / 반대 투표 라우터
+app.post('/post/:id/vote', 로그인확인, async (요청, 응답) => {
+  try {
+    const postId = new ObjectId(요청.params.id);
+    const userId = 요청.user._id;
+    const { type } = 요청.body; // 'up' 또는 'down'
+
+    if (!['up', 'down'].includes(type)) {
+      return 응답.status(400).json({ ok: false, message: 'vote type 오류' });
+    }
+
+    const post = await db.collection('post').findOne({ _id: postId });
+    if (!post) {
+      return 응답.status(404).json({ ok: false, message: '글을 찾을 수 없습니다.' });
+    }
+
+    // 기존 값이 없을 수도 있으니까 안전하게 기본값 처리
+    const likedBy = post.likedBy || [];
+    const dislikedBy = post.dislikedBy || [];
+    const isLiked = likedBy.some(u => String(u) === String(userId));
+    const isDisliked = dislikedBy.some(u => String(u) === String(userId));
+
+    let update = {};
+    let userVote = null;
+
+    if (type === 'up') {
+      if (isLiked) {
+        // 이미 추천한 상태 → 추천 취소
+        update = {
+          $pull: { likedBy: userId },
+          $inc: { likeCount: -1 }
+        };
+        userVote = null;
+      } else {
+        // 추천 누름
+        update = {
+          $addToSet: { likedBy: userId },
+          $inc: { likeCount: 1 }
+        };
+        userVote = 'up';
+
+        // 반대 눌러져 있던 상태면 해제
+        if (isDisliked) {
+          update.$pull = { ...(update.$pull || {}), dislikedBy: userId };
+          update.$inc.dislikeCount = (update.$inc.dislikeCount || 0) - 1;
+        }
+      }
+    } else if (type === 'down') {
+      if (isDisliked) {
+        // 이미 반대한 상태 → 반대 취소
+        update = {
+          $pull: { dislikedBy: userId },
+          $inc: { dislikeCount: -1 }
+        };
+        userVote = null;
+      } else {
+        // 반대 누름
+        update = {
+          $addToSet: { dislikedBy: userId },
+          $inc: { dislikeCount: 1 }
+        };
+        userVote = 'down';
+
+        // 추천 눌러져 있던 상태면 해제
+        if (isLiked) {
+          update.$pull = { ...(update.$pull || {}), likedBy: userId };
+          update.$inc.likeCount = (update.$inc.likeCount || 0) - 1;
+        }
+      }
+    }
+
+    await db.collection('post').updateOne({ _id: postId }, update);
+
+    const updated = await db.collection('post').findOne({ _id: postId });
+
+    return 응답.json({
+      ok: true,
+      userVote,
+      likeCount: updated.likeCount || 0,
+      dislikeCount: updated.dislikeCount || 0
+    });
+  } catch (err) {
+    console.error('POST /post/:id/vote error:', err);
+    return 응답.status(500).json({ ok: false, message: '서버 오류가 발생했습니다.' });
+  }
+});
+
+app.post("/chat/room/:id/rename", 로그인확인, async (req, res) => {
+  const roomId = req.params.id;
+  const newName = req.body.name?.trim();
+
+  if (!newName) {
+    return res.json({ ok: false, message: "이름이 비어있습니다." });
+  }
+
+  const room = await db.collection("chatroom").findOne({
+    _id: new ObjectId(roomId),
+    member: req.user._id
+  });
+
+  if (!room) {
+    return res.json({ ok: false, message: "채팅방 없음" });
+  }
+
+  await db.collection("chatroom").updateOne(
+    { _id: new ObjectId(roomId) },
+    { $set: { name: newName } }
+  );
+
+  return res.json({ ok: true });
 });
