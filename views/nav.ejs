@@ -7,6 +7,14 @@
         <a href="/register" class="btn btn-primary">회원가입</a>
       <% } else { %>
         <a href="/write" class="btn btn-ghost">글쓰기</a>
+
+        <!-- ✅ 스터디룸 생성 버튼 추가 -->
+        <a href="/studyroom/new" class="btn btn-ghost">스터디룸 생성</a>
+
+        <!-- (선택) 스터디룸 목록 버튼도 쓰고 싶으면 이거 주석 해제 -->
+        <a href="/studyroom/list" class="btn btn-ghost">스터디룸 목록</a>
+        <a href="/invite/list" class="text-sm text-gray-700">알림</a>
+
         <a href="/mypage" class="btn btn-primary"><%= user.username %> 마이페이지</a>
         <a href="/logout" class="btn bg-red-600 text-white hover:bg-red-700">로그아웃</a>
       <% } %>

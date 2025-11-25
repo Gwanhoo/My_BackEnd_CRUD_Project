@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
+</head>
+<body class="bg-gray-100 p-6">
+
+<h1 class="text-xl font-bold mb-4">스터디룸 초대하기</h1>
+
+<ul class="bg-white rounded shadow divide-y">
+  <% people.forEach(person => { %>
+    <li class="p-3 flex justify-between items-center">
+      <div>
+        <div class="font-semibold"><%= person.name %></div>
+        <div class="text-sm text-gray-500"><%= person.userId %></div>
+      </div>
+
+      <form action="/studyroom/<%= roomId %>/invite" method="POST">
+        <input type="hidden" name="targetId" value="<%= person.userId %>" />
+        <button class="px-3 py-1 bg-blue-500 text-black rounded text-sm hover:bg-blue-600">
+          초대하기
+        </button>
+      </form>
+    </li>
+  <% }) %>
+</ul>
+
+</body>
+</html>

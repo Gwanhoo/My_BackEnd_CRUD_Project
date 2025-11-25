@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>스터디룸 목록</title>
+  <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
+
+</head>
+
+<body class="bg-gray-100">
+
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur border-b border-gray-200">
+    <nav class="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
+      <a href="/" class="text-xl font-bold text-blue-600 hover:text-blue-700">코사모</a>
+
+      <div class="flex items-center gap-3">
+        <a href="/studyroom/new" class="text-sm text-gray-700 hover:text-gray-900">스터디룸 생성</a>
+        <a href="/mypage" class="px-3 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-700">
+          <%= user.username %>
+        </a>  
+      </div>
+    </nav>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-8">
+
+    <h1 class="text-2xl font-bold mb-6">내 스터디룸 목록</h1>
+
+    <!-- 방이 없을 때 -->
+    <% if (rooms.length === 0) { %>
+      <div class="bg-white p-6 rounded shadow text-center text-gray-600">
+        아직 참여 중인 스터디룸이 없습니다.  
+        <br>
+        <a href="/studyroom/new" class="text-blue-600 underline">새 스터디룸 만들기</a>
+      </div>
+    <% } %>
+
+    <!-- 방 목록 -->
+    <div class="grid gap-4">
+      <% rooms.forEach(room => { %>
+        <div class="bg-white p-5 rounded shadow flex justify-between items-center">
+          
+          <div>
+            <div class="text-lg font-semibold text-gray-800"><%= room.title %></div>
+            <div class="text-sm text-gray-500">
+              방장: <%= room.owner %>  
+              • 멤버: <%= room.member.length %>명
+            </div>
+          </div>
+
+          <a href="/studyroom/<%= room._id %>"
+             class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
+            입장하기
+          </a>
+        </div>
+      <% }) %>
+    </div>
+
+  </main>
+
+</body>
+</html>

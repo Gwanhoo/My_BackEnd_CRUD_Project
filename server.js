@@ -13,22 +13,30 @@ const http = require('http');
 
 const server = http.createServer(app);
 const io = new Server(server);
+// ⭐ socket.io 에 express-session 연결
+io.engine.use((req, res, next) => {
+  sessionMiddleware(req, res, next);
+});
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(passport.initialize())
-app.use(session({
+// ⭐ 세션 미들웨어 분리 (socket.io도 사용해야 해서)
+const sessionMiddleware = session({
   secret : process.env.SESSION_SECRET,         
   resave : false,
   saveUninitialized : false,
   cookie: { maxAge : 1000 * 60 * 60 * 2 },
   store : MongoStore.create({
-    mongoUrl : process.env.MONGODB_URI,          
+    mongoUrl : process.env.MONGODB_URI,
     dbName   : process.env.MONGODB_DB_NAME       
   })
-}));
+});
 
+// Express에서 세션 사용
+app.use(sessionMiddleware);
+app.use(passport.initialize());
+app.use(passport.session());
 
-app.use(passport.session())
 
 app.use(methodOverride('_method'))
 app.use(express.static(__dirname + '/public'));
@@ -40,6 +48,8 @@ new MongoClient(url).connect()
   .then((client) => {
     console.log('DB연결성공');
     db = client.db(process.env.MONGODB_DB_NAME);  
+    app.locals.db = db;
+
   })
   .catch((err) => {
     console.error('[DB ERROR]', err);
@@ -516,31 +526,69 @@ app.get("/people", async (req, res) => {
     res.status(500).send("프로필 목록을 불러오는 중 오류가 발생했습니다.");
   }
 });
-
 io.on('connection', (socket) => {
   console.log('🟢 socket connected :', socket.id);
 
-  // 방 입장
-  socket.on('join-room', (roomId) => {
-    socket.join(roomId);
-    console.log('room joined:', roomId);
+  // (선택) 소켓에서도 로그인 정보 쓰기
+  const userId = socket.request.session?.passport?.user;
+
+  if (!userId) {
+    console.log('❌ 로그인 안 된 소켓 연결입니다.');
+    // 로그인 안 했으면 막고 싶으면 여기서 return 해도 됨
+    // return;
+  }
+
+  // ✅ 방 입장
+  socket.on('join-room', async (roomId) => {
+    try {
+      // (선택) 방 멤버인지 검사하고 싶으면 주석 해제
+      // const room = await db.collection('chatroom').findOne({
+      //   _id: new ObjectId(roomId),
+      //   member: new ObjectId(userId)
+      // });
+      // if (!room) {
+      //   console.log('❌ 멤버가 아닌 방입니다.', roomId, userId);
+      //   return;
+      // }
+
+      socket.join(roomId);
+      console.log('📌 room joined:', roomId, 'by', socket.id);
+    } catch (err) {
+      console.error('join-room 에러:', err);
+    }
   });
 
-  // 메시지 받기
+
+  // ✅ 채팅 메시지
   socket.on('chat-message', async (data) => {
-    console.log('💬 받은 메시지:', data);
+    try {
+      console.log('💬 받은 메시지:', data);
 
-    await db.collection('messages').insertOne({
-      roomId: new ObjectId(data.roomId),
-      senderId: new ObjectId(data.senderId),
-      message: data.message,
-      date: new Date()
-    });
+      const roomId = new ObjectId(data.roomId);
+      const senderId = new ObjectId(data.senderId); // 나중에는 userId 쓰는 게 더 안전
 
-    // 나 빼고 같은 방 사람한테만 방송
-    socket.to(data.roomId).emit('chat-message', data);
+      const doc = {
+        parent: roomId,          // studyroom 라우트에서 parent로 조회하니까
+        userId: senderId,
+        content: data.message,
+        createdAt: new Date()
+      };
+
+      await db.collection('chat').insertOne(doc);
+
+      // 같은 방 사람들에게 방송
+      socket.to(data.roomId).emit('chat-message', {
+        roomId: data.roomId,
+        senderId: String(senderId),
+        message: data.message,
+        createdAt: doc.createdAt
+      });
+    } catch (err) {
+      console.error('chat-message 에러:', err);
+    }
   });
 });
+
 
 
 
@@ -654,4 +702,223 @@ app.post("/chat/room/:id/rename", 로그인확인, async (req, res) => {
   );
 
   return res.json({ ok: true });
+});
+
+app.get("/studyroom/new", 로그인확인, (req, res) => {
+  res.render("studyroom_new.ejs", {
+    error: null,
+    user: req.user,
+    isLogin: true
+  });
+});
+
+
+app.post("/studyroom/new", 로그인확인, async (req, res) => {
+  const db = req.app.locals.db;
+
+  const room = {
+    title: req.body.title,
+    type: "study",
+    owner: req.user._id,
+    member: [req.user._id],  // 방장은 자동으로 멤버에 포함
+    createdAt: new Date()
+  };
+
+  const result = await db.collection("chatroom").insertOne(room);
+
+  // 생성 후 방으로 바로 이동
+  res.redirect(`/studyroom/${result.insertedId}`);
+});
+
+app.get("/studyroom/list", 로그인확인, async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+
+    const rooms = await db.collection("chatroom")
+      .find({
+        type: "study",
+        member: req.user._id
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    res.render("studyroom_list.ejs", {
+      rooms,
+      user: req.user,
+      isLogin: true
+    });
+
+  } catch (err) {
+    console.error("GET /studyroom/list error:", err);
+    res.status(500).send("서버 오류 발생");
+  }
+});
+
+app.get("/studyroom/:id", 로그인확인, async (req, res) => {
+  const db = req.app.locals.db;
+  const roomId = new ObjectId(req.params.id);
+
+  try {
+    const room = await db.collection("chatroom").findOne({
+      _id: roomId,
+      type: "study"
+    }); 
+
+    if (!room) {
+      return res.status(404).send("스터디룸을 찾을 수 없습니다.");
+    }
+
+    // 멤버 체크
+    const isMember = room.member.some(
+      m => String(m) === String(req.user._id)
+    );
+
+    if (!isMember) {
+      return res.status(403).send("이 스터디룸의 멤버가 아닙니다.");
+    }
+
+    // 채팅 내역
+    const chats = await db.collection("chat")
+      .find({ parent: roomId })
+      .sort({ createdAt: 1 })
+      .toArray();
+
+    // 화면 렌더링
+    return res.render("studyroom.ejs", {
+      room,
+      chats,
+      user: req.user,
+      isLogin: true
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("서버 오류 발생");
+  }
+
+});
+
+
+
+app.post("/studyroom/:id/invite", 로그인확인, async (req, res) => {
+  const db = req.app.locals.db;
+  const roomId = new ObjectId(req.params.id);
+  const targetId = new ObjectId(req.body.targetId);
+
+  // 이미 초대 중인지 확인
+  const exists = await db.collection("invitation").findOne({
+    roomId,
+    from: req.user._id,
+    to: targetId,
+    status: "pending"
+  });
+
+  if (exists) {
+    return res.send("<script>alert('이미 초대한 사용자입니다.'); history.back();</script>");
+  }
+
+  await db.collection("invitation").insertOne({
+    roomId,
+    from: req.user._id,
+    to: targetId,
+    status: "pending",
+    createdAt: new Date()
+  });
+
+  return res.send("<script>alert('초대 요청을 보냈습니다.'); history.back();</script>");
+});
+
+app.get("/invite/list", 로그인확인, async (req, res) => {
+  const db = req.app.locals.db;
+  const invites = await db.collection("invitation")
+    .find({ to: req.user._id, status: "pending" })
+    .toArray();
+
+  res.render("invite_list.ejs", { invites, user: req.user });
+});
+
+app.post("/invite/accept", 로그인확인, async (req, res) => {
+  const db = req.app.locals.db;
+  const inviteId = new ObjectId(req.body.inviteId);
+
+  const invite = await db.collection("invitation").findOne({ _id: inviteId });
+
+  if (!invite) return res.send("초대 정보를 찾을 수 없습니다.");
+
+  // 스터디룸에 멤버 추가
+  await db.collection("chatroom").updateOne(
+    { _id: invite.roomId },
+    { $addToSet: { member: req.user._id } }
+  );
+
+  // 초대 상태 변경
+  await db.collection("invitation").updateOne(
+    { _id: inviteId },
+    { $set: { status: "accepted" } }
+  );
+
+  res.redirect(`/studyroom/${invite.roomId}`);
+});
+
+app.get("/invite/search", 로그인확인, async (req, res) => {
+  const db = req.app.locals.db;
+  const roomId = req.query.roomId;
+
+  // 스터디룸 정보
+  const room = await db.collection("chatroom").findOne({ _id: new ObjectId(roomId) });
+
+  // 전체 사용자 목록 (또는 people 테이블)
+  const people = await db.collection("people").find().toArray();
+
+  res.render("invite_search.ejs", { people, roomId, user: req.user });
+});
+
+app.post("/studyroom/:id/invite", 로그인확인, async (req, res) => {
+  const db = req.app.locals.db;
+  const roomId = new ObjectId(req.params.id);
+  const targetId = new ObjectId(req.body.targetId);
+
+  // 이미 초대한 상태인지 확인
+  const exists = await db.collection("invitation").findOne({
+    roomId,
+    from: req.user._id,
+    to: targetId,
+    status: "pending"
+  });
+
+  if (exists) {
+    return res.send("<script>alert('이미 초대한 유저입니다.'); history.back();</script>");
+  }
+
+  await db.collection("invitation").insertOne({
+    roomId,
+    from: req.user._id,
+    to: targetId,
+    status: "pending",
+    createdAt: new Date()
+  });
+
+  res.send("<script>alert('초대 요청을 보냈습니다.'); history.back();</script>");
+});
+
+app.post("/invite/accept", 로그인확인, async (req, res) => {
+  const db = req.app.locals.db;
+  const inviteId = new ObjectId(req.body.inviteId);
+
+  const invite = await db.collection("invitation").findOne({ _id: inviteId });
+  if (!invite) return res.send("초대 정보를 찾을 수 없습니다.");
+
+  // 멤버 추가
+  await db.collection("chatroom").updateOne(
+    { _id: invite.roomId },
+    { $addToSet: { member: req.user._id } }
+  );
+
+  // 초대 상태 변경
+  await db.collection("invitation").updateOne(
+    { _id: inviteId },
+    { $set: { status: "accepted" } }
+  );
+
+  res.redirect(`/studyroom/${invite.roomId}`);
 });

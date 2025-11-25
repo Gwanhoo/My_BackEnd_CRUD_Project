@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title><%= room.title %> - 스터디룸</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
+
+</head>
+<body class="bg-gray-50">
+  <!-- 네 기존 header include 쓰면 그걸로 대체해도 됨 -->
+  <header class="bg-white/80 backdrop-blur border-b border-gray-200">
+    <nav class="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
+      <a href="/" class="text-xl font-bold text-blue-600 hover:text-blue-700">코사모</a>
+      <div class="flex items-center gap-3">
+        <% if (!isLogin) { %>
+          <a href="/login" class="link">로그인</a>
+          <a href="/register" class="btn btn-primary">회원가입</a>
+        <% } else { %>
+          <a href="/write" class="btn btn-ghost">글쓰기</a>
+          <a href="/studyroom/new" class="btn btn-ghost">스터디룸 생성</a>
+          <a href="/mypage" class="btn btn-primary"><%= user.username %> 마이페이지</a>
+          <a href="/logout" class="btn bg-red-600 text-white hover:bg-red-700">로그아웃</a>
+        <% } %>
+      </div>
+    </nav>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold mb-2"><%= room.title %></h1>
+    <a href="/invite/search?roomId=<%= room._id %>"
+      class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 transition">
+      초대하기
+    </a>
+
+    <p class="text-sm text-gray-500 mb-4">
+      스터디룸 ID: <%= room._id %>
+    </p>
+    
+    <!-- 기존 채팅 로그 -->
+    <div id="chat-log" style="height:320px; overflow-y:auto; border:1px solid #ddd; padding:8px; background:white;">
+      <% chats.forEach(function(c) { %>
+        <div style="margin-bottom:4px;">
+          <strong>
+            <%= String(c.userId) === String(user._id) ? "나" : c.userId %>
+          </strong>
+          :
+          <span><%= c.content %></span>
+        </div>
+      <% }) %>
+    </div>
+
+    <!-- 입력폼 -->
+    <form id="chat-form" class="mt-3 flex gap-2">
+      <input
+        id="chat-input"
+        class="flex-1 border px-2 py-1 text-sm"
+        autocomplete="off"
+        placeholder="메시지를 입력하세요"
+      />
+      <button type="submit" class="btn btn-primary text-sm">전송</button>
+    </form>
+  </main>
+
+  <!-- socket.io 클라이언트 -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    const roomId = "<%= room._id %>";
+    const myId = "<%= user._id %>";
+
+    // 방 입장
+    socket.emit('join-room', roomId);
+
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('chat-input');
+    const log = document.getElementById('chat-log');
+
+    // 메시지 전송
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+
+      // 서버로 전송
+      socket.emit('chat-message', {
+        roomId,
+        senderId: myId,
+        message: text
+      });
+
+      // 내 메시지는 바로 화면에 띄우기
+      const div = document.createElement('div');
+      div.style.marginBottom = '4px';
+      div.innerHTML = "<strong>나</strong>: <span>" + text + "</span>";
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+
+      input.value = '';
+    });
+
+    // 다른 사람 / (내 것도 socket.to라서 안 옴) 서버에서 온 메시지
+    socket.on('chat-message', function (data) {
+      const div = document.createElement('div');
+      div.style.marginBottom = '4px';
+      const name = (data.senderId === myId) ? "나" : data.senderId;
+      div.innerHTML = "<strong>" + name + "</strong>: <span>" + data.message + "</span>";
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    });
+  </script>
+</body>
+</html>
