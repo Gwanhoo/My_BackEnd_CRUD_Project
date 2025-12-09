@@ -5,6 +5,7 @@ const methodOverride = require('method-override')
 const session = require('express-session')
 const passport = require('passport')
 const LocalStrategy = require('passport-local')
+const KakaoStrategy = require('passport-kakao').Strategy;
 const bcrypt = require('bcrypt') 
 const MongoStore = require('connect-mongo')
 const { Server } = require('socket.io'); 
@@ -295,6 +296,49 @@ passport.deserializeUser(async (user, done) => {
   }
 });
 
+passport.use(new KakaoStrategy(
+  {
+    clientID: process.env.KAKAO_CLIENT_ID,
+    callbackURL: process.env.KAKAO_CALLBACK_URL
+  },
+  async (accessToken, refreshToken, profile, done) => {
+    try {
+      const kakaoId = profile.id;
+      const kakaoAccount = profile._json.kakao_account;
+      const email = kakaoAccount?.email;
+      const nickname = kakaoAccount?.profile?.nickname || profile.displayName;
+
+      const userCol = db.collection('user');
+
+      // 카카오로 가입한 유저 있는지 확인
+      let user = await userCol.findOne({
+        provider: 'kakao',
+        snsId: kakaoId
+      });
+
+      // 없으면 신규 생성
+      if (!user) {
+        const newUser = {
+          provider: 'kakao',
+          snsId: kakaoId,
+          email: email,
+          username: nickname,
+          createdAt: new Date(),
+        };
+
+        const result = await userCol.insertOne(newUser);
+        newUser._id = result.insertedId;
+        user = newUser;
+      }
+
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
+  }
+));
+
+
 app.get('/login', (요청, 응답) => {
   // 아직 로그인 전이면 요청.user는 undefined일 수 있음
   응답.render('login.ejs');
@@ -311,6 +355,86 @@ app.post('/login', (요청, 응답, next) => {
     });
   })(요청, 응답, next);
 });
+
+// 카카오 로그인 시작
+app.get('/auth/kakao', passport.authenticate('kakao'));
+
+// 카카오 로그인 콜백
+app.get('/auth/kakao/callback',
+  passport.authenticate('kakao', { failureRedirect: '/login' }),
+  (req, res) => {
+
+    // 닉네임이 없으면 닉네임 설정 페이지로
+  if (!req.user.nickname || req.user.nickname === "미연동 계정") {
+      return res.redirect('/set-username');
+  }
+
+    // 닉네임 있으면 홈으로
+    return res.redirect('/');
+  }
+);
+
+app.get('/set-username', (req, res) => {
+    if (!req.user) return res.redirect('/login');
+    res.render('set-username.ejs');
+});
+
+app.post('/set-username', async (req, res) => {
+    let newName = req.body.username;
+
+    await db.collection('user').updateOne(
+        { _id: req.user._id },
+        { $set: { username: newName } }
+    );
+
+    res.redirect('/');
+});
+
+
+// 닉네임 중복확인 API
+app.get('/check-username', async (req, res) => {
+    const username = req.query.username;
+
+    if (!username || username.trim() === "") {
+        return res.json({ exist: true }); // 빈 값은 허용X
+    }
+
+    const user = await db.collection('user').findOne({ username: username });
+
+    if (user) {
+        return res.json({ exist: true });
+    } else {
+        return res.json({ exist: false });
+    }
+});
+
+app.post('/set-username', async (req, res) => {
+    let newName = req.body.username;
+
+    try {
+        // DB unique 체크
+        const exists = await db.collection('user').findOne({ username: newName });
+        if (exists) {
+            return res.send("<script>alert('이미 사용 중인 닉네임입니다.'); history.back();</script>");
+        }
+
+        await db.collection('user').updateOne(
+            { _id: req.user._id },
+            { $set: { username: newName } }
+        );
+
+        return res.redirect('/');
+
+    } catch (err) {
+        // Mongo duplicate key error (E11000) 방지
+        if (err.code === 11000) {
+            return res.send("<script>alert('이미 사용 중인 닉네임입니다.'); history.back();</script>");
+        }
+        console.log(err);
+        return res.send("<script>alert('오류 발생'); history.back();</script>");
+    }
+});
+
 
 
 app.get('/mypage', 로그인확인, async (요청, 응답) => {

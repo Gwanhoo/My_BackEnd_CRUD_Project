@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>닉네임 설정</title>
+    <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
+</head>
+
+<body class="grey-bg">
+
+    <%- include('nav.ejs') %>
+
+    <main class="min-h-[calc(100dvh-64px)] flex items-center justify-center bg-gray-50 px-4">
+        <form 
+            action="/set-username" 
+            method="POST" 
+            class="form w-full max-w-md bg-white shadow-md p-8 rounded-lg">
+
+            <h2 class="text-xl font-bold mb-6 text-center">닉네임 설정</h2>
+
+            <label class="form-label">닉네임</label>
+
+            <!-- 입력 + 중복확인 버튼 묶음 -->
+            <div class="flex gap-2 mt-2">
+                <input 
+                    id="usernameInput"
+                    name="username" 
+                    class="input w-full"
+                    placeholder="사용할 닉네임을 입력하세요" 
+                    required
+                />
+
+                <button 
+                    type="button"
+                    id="checkBtn"
+                    class="btn btn-primary px-6">
+                    중복확인
+                </button>
+            </div>
+
+            <!-- 메시지 표시 -->
+            <p id="checkMsg" class="text-sm mt-2"></p>
+
+            <button 
+                id="saveBtn"
+                type="submit" 
+                class="btn btn-primary w-full h-[45px] mt-6 text-base opacity-50 cursor-not-allowed"
+                disabled>
+                저장하기
+            </button>
+
+
+        </form>
+    </main>
+
+    <script>
+        const checkBtn = document.getElementById('checkBtn');
+        const input = document.getElementById('usernameInput');
+        const msg = document.getElementById('checkMsg');
+        const saveBtn = document.getElementById('saveBtn');
+
+        let usernameValid = false;
+
+        // 저장 버튼 상태 업데이트 함수
+        function updateSaveButton() {
+            if (usernameValid) {
+                saveBtn.disabled = false;
+                saveBtn.classList.remove("opacity-50", "cursor-not-allowed");
+            } else {
+                saveBtn.disabled = true;
+                saveBtn.classList.add("opacity-50", "cursor-not-allowed");
+            }
+        }
+
+        checkBtn.addEventListener('click', async () => {
+            const value = input.value.trim();
+
+            if (!value) {
+                msg.textContent = "닉네임을 입력해주세요.";
+                msg.className = "text-red-500 text-sm mt-2";
+                usernameValid = false;
+                updateSaveButton();
+                return;
+            }
+
+            const res = await fetch(`/check-username?username=` + value);
+            const data = await res.json();
+
+            if (data.exist) {
+                msg.textContent = "이미 사용 중인 닉네임입니다.";
+                msg.className = "text-red-500 text-sm mt-2";
+                usernameValid = false;
+            } else {
+                msg.textContent = "사용 가능한 닉네임입니다!";
+                msg.className = "text-green-600 text-sm mt-2";
+                usernameValid = true;
+            }
+
+            updateSaveButton();
+        });
+
+        // 사용자가 input을 수정하면 다시 중복확인 해야만 저장 가능하도록 막기
+        input.addEventListener("input", () => {
+            usernameValid = false;
+            msg.textContent = "중복확인을 해주세요.";
+            msg.className = "text-gray-500 text-sm mt-2";
+            updateSaveButton();
+        });
+
+    </script>
+
+</body>
+</html>
