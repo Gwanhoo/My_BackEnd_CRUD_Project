@@ -10,13 +10,13 @@
   <%- include('nav.ejs') %>
 
   <% /* 라우터에서 post 또는 result 이름으로 올 수 있으니 호환 처리 */ %>
-  <!-- 서버에서 result 로 넘겨 받은 값을 p로 통일 -->
   <% const p = (typeof post !== 'undefined' && post) ? post : result; %>
+  <% const 내아이디 = user?._id ? String(user._id) : null; %>
 
-    <main class="max-w-3xl mx-auto px-4 py-8">
+  <main class="max-w-3xl mx-auto px-4 py-8">
+
     <!-- 전체 카드 -->
     <article class="bg-white border-pr-1 border-gray-200 rounded-pr-16 shadow-[0_4px_12px_rgba(0,0,0,0.05)] p-pr-24 space-y-pr-24">
-      <% const 내아이디 = user?._id ? String(user._id) : null; %>
 
       <!-- 1. 제목 박스 -->
       <section class="border-pr-1 border-gray-300 rounded-pr-12 bg-gray-50 px-pr-20 py-pr-16">
@@ -31,10 +31,36 @@
             <span><%= new Date(p.createdAt).toLocaleString() %></span>
           <% } %>
         </div>
+
+        <!-- ✔ 수정 / 삭제 버튼 (작성자 본인에게만 노출) -->
+        <% if (String(p.author) === 내아이디) { %>
+          <div class="flex justify-end gap-pr-12 mt-pr-16">
+
+            <!-- 수정 버튼 -->
+            <a 
+              href="/edit/<%= p._id %>"
+              class="px-pr-16 py-pr-8 text-14sb rounded-pr-8 
+                     bg-blue-600 text-white hover:bg-blue-700 transition-all">
+              수정
+            </a>
+
+            <!-- 삭제 버튼 -->
+            <button
+              id="deleteBtn"
+              data-id="<%= p._id %>"
+              class="px-pr-16 py-pr-8 text-14sb rounded-pr-8 
+                     bg-red-600 text-white hover:bg-red-700 transition-all">
+              삭제
+            </button>
+
+          </div>
+        <% } %>
+
       </section>
 
-      <!-- 2. 내용(태그 포함) 큰 박스 -->
+      <!-- 2. 본문 + 태그 -->
       <section class="border-pr-1 border-gray-300 rounded-pr-12 bg-white px-pr-32 py-pr-32">
+
         <% if (p.tags && p.tags.length > 0) { %>
           <div class="mb-pr-20 flex flex-wrap gap-pr-8">
             <% p.tags.forEach(tag => { %>
@@ -53,12 +79,8 @@
         </div>
       </section>
 
-
-
-     <!-- 3. 추천 / 반대 버튼 (가운데 작은 박스 2개 + 숫자) -->
+      <!-- 3. 추천 / 반대 버튼 -->
       <section class="flex justify-center gap-pr-48 mt-pr-32">
-
-        <!-- 추천 박스 -->
         <button
           id="upvoteBtn"
           type="button"
@@ -72,7 +94,6 @@
           <span id="likeCount" class="text-16m"><%= p.likeCount || 0 %></span>
         </button>
 
-        <!-- 반대 박스 -->
         <button
           id="downvoteBtn"
           type="button"
@@ -85,19 +106,15 @@
           <span class="text-16sb">▼</span>
           <span id="dislikeCount" class="text-16m"><%= p.dislikeCount || 0 %></span>
         </button>
-
       </section>
-
-
-
 
     </article>
 
-    <!-- 5. 맨 아래 큰 댓글 박스 -->
+    <!-- 4. 댓글 영역 -->
     <section class="mt-pr-32 border-pr-1 border-gray-300 rounded-pr-16 bg-white px-pr-24 py-pr-24 space-y-pr-16">
       <h2 class="text-18sb text-gray-900 mb-pr-4">댓글</h2>
 
-      <!-- 댓글 입력 -->
+      <!-- 댓글 작성 -->
       <form action="/comment" method="POST" class="flex items-center gap-pr-12">
         <input 
           name="content"
@@ -108,7 +125,7 @@
                  shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
         >
         <input type="hidden" name="parentId" value="<%= p._id %>">
-        
+
         <button
           type="submit"
           class="h-pr-48 px-pr-24 rounded-pr-8 text-white text-16sb
@@ -118,7 +135,7 @@
         </button>
       </form>
 
-      <!-- 댓글 리스트 -->
+      <!-- 댓글 목록 -->
       <ul class="mt-pr-16 space-y-pr-12">
         <% if (result1.length === 0) { %>
           <li class="text-gray-500 text-center text-16m py-pr-24">
@@ -129,7 +146,6 @@
             <li class="border-pr-1 border-gray-200 bg-white rounded-pr-8 p-pr-16 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-pr-8">
-                  <!-- 작성자 아바타 -->
                   <div class="w-pr-32 h-pr-32 rounded-full bg-gray-200 flex items-center justify-center text-14m text-gray-500 font-semibold">
                     <%= (c.authorName || 'U').slice(0, 1).toUpperCase() %>
                   </div>
@@ -151,10 +167,9 @@
     </section>
   </main>
 
-
-  <% /* 삭제 요청 (본인만 보이므로 버튼이 있을 때만 동작) */ %>
+<!-- JS 영역 -->
 <script>
-  // 삭제 버튼
+  /* 삭제 버튼 동작 */
   const del = document.getElementById('deleteBtn');
   if (del) {
     del.addEventListener('click', () => {
@@ -169,8 +184,7 @@
     });
   }
 
-
-
+  /* 추천 / 반대 */
   const upBtn = document.getElementById('upvoteBtn');
   const downBtn = document.getElementById('downvoteBtn');
   const likeSpan = document.getElementById('likeCount');
@@ -178,7 +192,6 @@
   const postId = '<%= p._id %>';
 
   function applyVoteStyle(vote) {
-    // 기본 초기화
     upBtn.classList.remove('bg-b-primary', 'border-b-primary', 'text-white');
     downBtn.classList.remove('bg-red-600', 'border-red-600', 'text-white');
 
@@ -204,10 +217,8 @@
       .then(r => r.json())
       .then(data => {
         if (!data.ok) return alert('오류 발생');
-
         likeSpan.textContent = data.likeCount;
         dislikeSpan.textContent = data.dislikeCount;
-
         applyVoteStyle(data.userVote);
       })
       .catch(err => console.error(err));
@@ -217,9 +228,7 @@
     upBtn.addEventListener('click', () => sendVote('up'));
     downBtn.addEventListener('click', () => sendVote('down'));
   }
-
 </script>
 
-  
 </body>
 </html>

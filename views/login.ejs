@@ -12,7 +12,8 @@
     <%- include('nav.ejs') %>
 
     <main class="min-h-[calc(100dvh-64px)] flex items-center justify-center bg-gray-50 px-4">
-        <form class="form w-full max-w-md bg-white shadow-md rounded-lg p-6">
+        <form action="/login" method="POST" class="form w-full max-w-md bg-white shadow-md rounded-lg p-6">
+
             <h2 class="text-xl font-bold mb-6 text-center">로그인</h2>
 
             <!-- 아이디 -->
@@ -47,7 +48,7 @@
             <a href="/auth/kakao" 
                class="w-full flex items-center justify-center gap-2 py-3 rounded-md">
                
-               <img src="kakao_logo.png" alt="카카오" class="w-5 h-5" />
+               <img src="kakao_logo.png" alt="카카오" class="w-300 h-45" />
             </a>
 
             <!-- 회원가입 유도 -->

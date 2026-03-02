@@ -4,9 +4,10 @@ module.exports = {
     "./views/**/*.{ejs,html}",
     "./public/**/*.{html,js}"
   ],
+
   theme: {
     extend: {
-      // ✅ 커스텀 pr 단위 (spacing 계열: p/m/px/py/w/h/gap/max-w 등에서 공통 사용)
+      // 📌 spacing (pr-* 단위)
       spacing: {
         'pr-1': '1px',
         'pr-2': '2px',
@@ -33,7 +34,8 @@ module.exports = {
         'pr-118': '118px',
         'pr-151': '151px',
         'pr-172': '172px',
-        // 화면폭/카드폭 등에서 쓰던 값들
+
+        // width/height 전용 프리셋
         'pr-240': '240px',
         'pr-260': '260px',
         'pr-300': '300px',
@@ -41,7 +43,7 @@ module.exports = {
         'pr-800': '800px',
       },
 
-      // ✅ 둥근 모서리 (rounded-pr-*)
+      // 📌 rounded-pr-*
       borderRadius: {
         'pr-4':  '4px',
         'pr-6':  '6px',
@@ -55,18 +57,27 @@ module.exports = {
         'pr-48': '48px',
       },
 
-      // ✅ 브랜드 색 (버튼 그라데이션 등)
+      // 📌 브랜드 컬러
       colors: {
         'b-primary':  '#005AFF',
-        'b-tertiary': '#7AA8FF',
         'b-secondary':'#F6F8FE',
+        'b-tertiary': '#7AA8FF',
       },
 
-      // (선택) 살짝 쓰던 그림자 프리셋
+      // 📌 그림자 preset
       boxShadow: {
         'elev-1': '0 2px 8px rgba(0,0,0,0.12)',
       },
     },
   },
-  plugins: [],
+
+  // ⬇⬇⬇ DaisyUI 포함시키는 최종 plugins
+  plugins: [
+    require('daisyui')
+  ],
+
+  // DaisyUI 기본 테마 설정 (원하면 변경 가능)
+  daisyui: {
+    themes: ["light"],
+  }
 };

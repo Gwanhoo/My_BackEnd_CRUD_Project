@@ -441,17 +441,45 @@ app.get('/mypage', 로그인확인, async (요청, 응답) => {
   try {
     const me = 요청.user;
     const meId = new ObjectId(me._id);
+
+    // 1) 내가 쓴 글
     const myPosts = await db.collection('post')
       .find({ authorId: meId })
       .sort({ createdAt: -1 })
       .toArray();
 
-    응답.render('mypage.ejs', { me, myPosts });
+    // 2) 내가 쓴 댓글
+    const myComments = await db.collection('comment')
+      .find({ authorId: meId })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    // 3) 내가 추천한 글
+    const likedPosts = await db.collection('post')
+      .find({ likedBy: meId })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    // 4) 내가 비추천한 글
+    const dislikedPosts = await db.collection('post')
+      .find({ dislikedBy: meId })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    응답.render('mypage.ejs', {
+      me,
+      myPosts,
+      myComments,
+      likedPosts,
+      dislikedPosts
+    });
+
   } catch (e) {
     console.error(e);
     응답.status(500).send('서버 에러');
   }
 });
+
 
 app.get('/logout', (요청, 응답, next) => {
   요청.logout(function (err) {
@@ -580,10 +608,11 @@ app.get("/chat/room/:id", 로그인확인, async (req, res) => {
   }
 
   // 기존 메시지 불러오기 (선택 사항)
-  const messages = await db.collection("messages")
-    .find({ roomId: new ObjectId(roomId) })
-    .sort({ date: 1 })
+  const messages = await db.collection("chat")
+    .find({ parent: new ObjectId(roomId) })
+    .sort({ createdAt: 1 })
     .toArray();
+
 
   res.render("chatRoom.ejs", {
     room,
