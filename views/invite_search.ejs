@@ -1,29 +1,26 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스터디룸 초대</title>
   <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
 </head>
-<body class="bg-gray-100 p-6">
-
-<h1 class="text-xl font-bold mb-4">스터디룸 초대하기</h1>
-
-<ul class="bg-white rounded shadow divide-y">
-  <% people.forEach(person => { %>
-    <li class="p-3 flex justify-between items-center">
-      <div>
-        <div class="font-semibold"><%= person.name %></div>
-        <div class="text-sm text-gray-500"><%= person.userId %></div>
-      </div>
-
-      <form action="/studyroom/<%= roomId %>/invite" method="POST">
-        <input type="hidden" name="targetId" value="<%= person.userId %>" />
-        <button class="px-3 py-1 bg-blue-500 text-black rounded text-sm hover:bg-blue-600">
-          초대하기
-        </button>
-      </form>
-    </li>
-  <% }) %>
-</ul>
-
+<body class="app-shell">
+  <%- include('nav.ejs') %>
+  <main class="max-w-3xl mx-auto px-4 py-pr-32">
+    <h1 class="text-24sb mb-pr-20">스터디룸 초대하기</h1>
+    <ul class="surface divide-y divide-slate-700">
+      <% people.forEach(person => { %>
+        <li class="p-pr-12 flex justify-between items-center gap-pr-12">
+          <div><div class="text-16sb"><%= person.name %></div><div class="text-14m text-slate-400"><%= person.userId %></div></div>
+          <form action="/studyroom/<%= roomId %>/invite" method="POST">
+            <input type="hidden" name="targetId" value="<%= person.userId %>" />
+            <button class="btn btn-primary">초대하기</button>
+          </form>
+        </li>
+      <% }) %>
+    </ul>
+  </main>
 </body>
 </html>

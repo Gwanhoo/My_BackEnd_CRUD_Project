@@ -6,173 +6,55 @@
   <title>채팅방</title>
   <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="app-shell">
   <%- include('nav.ejs') %>
-
-  <main class="max-w-3xl mx-auto px-4 py-10">
-
-    <!-- 전체 박스 -->
-    <div class="bg-white border border-gray-300 rounded-pr-16 shadow-sm overflow-hidden">
-
-      <!-- 헤더 -->
-      <div class="flex items-center justify-between px-pr-20 py-pr-16 border-b border-gray-200 bg-white">
-        <button id="editRoomNameBtn" class="text-blue-600 text-16sb">
-          수정
-        </button>
-
-        <div class="flex-1 text-center">
-          <span id="roomName" class="text-18sb text-gray-900">
-            <%= room.name || '채팅방' %>
-          </span>
-        </div>
-
-        <a href="/chat/list" class="text-blue-600 text-16sb">
-          돌아가기 →
-        </a>
+  <main class="max-w-3xl mx-auto px-4 py-pr-32">
+    <div class="surface overflow-hidden">
+      <div class="flex items-center justify-between px-pr-20 py-pr-14 border-b border-slate-700 bg-slate-900">
+        <button id="editRoomNameBtn" class="text-b-tertiary text-16sb">수정</button>
+        <div class="flex-1 text-center"><span id="roomName" class="text-18sb text-white"><%= room.name || '채팅방' %></span></div>
+        <a href="/chat/list" class="text-b-tertiary text-16sb">돌아가기 →</a>
       </div>
 
-      <!-- 채팅 영역 -->
-      <div id="chatBox"
-           class="h-[400px] overflow-y-auto px-pr-16 py-pr-12 space-y-pr-10 bg-white">
-
+      <div id="chatBox" class="h-[400px] overflow-y-auto px-pr-16 py-pr-12 space-y-pr-10 bg-slate-900">
         <% if (messages && messages.length > 0) { %>
           <% messages.forEach(m => { %>
             <div class="flex <%= String(m.userId) === String(user._id) ? 'justify-end' : 'justify-start' %>">
-              <div
-                class="<%= String(m.userId) === String(user._id)
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-800' %>
-                  px-pr-12 py-pr-6 rounded-pr-10 max-w-[70%] break-words">
-                <%= m.content %>
-              </div>
+              <div class="<%= String(m.userId) === String(user._id) ? 'bg-b-primary text-white' : 'bg-slate-700 text-slate-100' %> px-pr-12 py-pr-6 rounded-pr-10 max-w-[70%] break-words"><%= m.content %></div>
             </div>
           <% }) %>
         <% } %>
-
       </div>
 
-      <!-- 입력 -->
-      <form id="chatForm"
-            class="flex items-center gap-pr-10 border-t border-gray-200 px-pr-16 py-pr-12 bg-white">
-        <input
-          id="msgInput"
-          type="text"
-          placeholder="메시지를 입력하세요..."
-          class="flex-1 h-pr-44 px-pr-12 border-pr-1 border-gray-300 rounded-pr-8 
-                 focus:outline-none focus:border-blue-500"
-          autocomplete="off"
-        />
-        <button
-          type="submit"
-          class="px-pr-20 h-pr-44 bg-blue-600 text-white rounded-pr-8 hover:bg-blue-700 transition">
-          보내기
-        </button>
+      <form id="chatForm" class="flex items-center gap-pr-10 border-t border-slate-700 px-pr-16 py-pr-12 bg-slate-900">
+        <input id="msgInput" type="text" placeholder="메시지를 입력하세요..." class="input flex-1" autocomplete="off" />
+        <button type="submit" class="btn btn-primary">보내기</button>
       </form>
-
     </div>
   </main>
 
-  <!-- socket.io -->
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // 소켓 재사용
-    const socket = window.socket || io();
-    window.socket = socket;
-
-    const roomId = "<%= room._id %>";
-    const myId   = "<%= user._id %>";
-
-    const chatBox  = document.getElementById('chatBox');
-    const chatForm = document.getElementById('chatForm');
-    const msgInput = document.getElementById('msgInput');
-
-    // 처음 로드 시 맨 아래
+    const socket = window.socket || io(); window.socket = socket;
+    const roomId = "<%= room._id %>"; const myId = "<%= user._id %>";
+    const chatBox = document.getElementById('chatBox'); const chatForm = document.getElementById('chatForm'); const msgInput = document.getElementById('msgInput');
     chatBox.scrollTop = chatBox.scrollHeight;
-
-    // 방 입장
-    if (socket.connected) {
-      socket.emit('join-room', roomId);
-    } else {
-      socket.once('connect', () => {
-        socket.emit('join-room', roomId);
-      });
-    }
-
-    // 중복 리스너 제거
-    socket.off('chat-message');
-
-    // 실시간 메시지 수신
-    socket.on('chat-message', (data) => {
-      addMessage(data);
-    });
-
-    // 메시지 전송
-    chatForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-
-      const msg = msgInput.value.trim();
-      if (!msg) return;
-
-      // 내 화면에 즉시 출력
-      addMessage({
-        senderId: myId,
-        message: msg
-      });
-
-      // 서버로 전송
-      socket.emit('chat-message', {
-        roomId,
-        senderId: myId,
-        message: msg
-      });
-
-      msgInput.value = '';
-      msgInput.focus();
-    });
-
-    // 메시지 렌더 함수
+    if (socket.connected) { socket.emit('join-room', roomId); } else { socket.once('connect', () => { socket.emit('join-room', roomId); }); }
+    socket.off('chat-message'); socket.on('chat-message', (data) => { addMessage(data); });
+    chatForm.addEventListener('submit', (e) => { e.preventDefault(); const msg = msgInput.value.trim(); if (!msg) return; addMessage({ senderId: myId, message: msg }); socket.emit('chat-message', { roomId, senderId: myId, message: msg }); msgInput.value = ''; msgInput.focus(); });
     function addMessage(data) {
-      const wrap = document.createElement('div');
-      const isMe = (String(data.senderId) === String(myId));
-
-      wrap.className = 'flex ' + (isMe ? 'justify-end' : 'justify-start');
-
-      const bubble = document.createElement('div');
-      bubble.className =
-        (isMe ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800') +
-        ' px-pr-10 py-pr-6 rounded-pr-10 max-w-[70%] break-words';
-
-      bubble.textContent = data.message;
-
-      wrap.appendChild(bubble);
-      chatBox.appendChild(wrap);
-      chatBox.scrollTop = chatBox.scrollHeight;
+      const wrap = document.createElement('div'); const isMe = (String(data.senderId) === String(myId)); wrap.className = 'flex ' + (isMe ? 'justify-end' : 'justify-start');
+      const bubble = document.createElement('div'); bubble.className = (isMe ? 'bg-b-primary text-white' : 'bg-slate-700 text-slate-100') + ' px-pr-10 py-pr-6 rounded-pr-10 max-w-[70%] break-words';
+      bubble.textContent = data.message; wrap.appendChild(bubble); chatBox.appendChild(wrap); chatBox.scrollTop = chatBox.scrollHeight;
     }
   </script>
 
-  <!-- 채팅방 이름 수정 -->
   <script>
-    const editBtn = document.getElementById('editRoomNameBtn');
-    const roomNameSpan = document.getElementById('roomName');
-
+    const editBtn = document.getElementById('editRoomNameBtn'); const roomNameSpan = document.getElementById('roomName');
     editBtn.addEventListener('click', () => {
-      const newName = prompt('새 채팅방 이름을 입력하세요:', roomNameSpan.textContent);
-      if (!newName) return;
-
-      fetch('/chat/room/<%= room._id %>/rename', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.ok) {
-          roomNameSpan.textContent = newName;
-          alert('채팅방 이름이 변경되었습니다.');
-        } else {
-          alert('변경 실패');
-        }
-      });
+      const newName = prompt('새 채팅방 이름을 입력하세요:', roomNameSpan.textContent); if (!newName) return;
+      fetch('/chat/room/<%= room._id %>/rename', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName }) })
+      .then(res => res.json()).then(data => { if (data.ok) { roomNameSpan.textContent = newName; alert('채팅방 이름이 변경되었습니다.'); } else { alert('변경 실패'); } });
     });
   </script>
 </body>
