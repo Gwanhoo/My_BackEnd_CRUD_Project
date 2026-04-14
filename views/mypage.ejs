@@ -5,222 +5,68 @@
   <title>마이페이지</title>
   <link rel="stylesheet" href="/output.css?v=<%= Date.now() %>">
 </head>
-
-<body class="bg-gray-50 text-gray-900">
+<body class="app-shell">
   <%- include('nav.ejs') %>
 
-  <main class="max-w-2xl mx-auto px-4 py-10">
-
-
-    <section class="bg-white rounded-2xl shadow-sm border p-6 mb-8">
-
-      <div class="flex items-center gap-6">
-
-        <!-- 프로필 둥근 박스 -->
-        <div class="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-3xl font-bold">
-          <%= me.username.charAt(0).toUpperCase() %>
-        </div>
-
+  <main class="max-w-3xl mx-auto px-4 py-pr-32">
+    <section class="card mb-pr-24">
+      <div class="flex items-center gap-pr-20">
+        <div class="w-20 h-20 rounded-full bg-slate-700 flex items-center justify-center text-3xl font-bold"><%= me.username.charAt(0).toUpperCase() %></div>
         <div class="flex-1">
-          <h2 class="text-2xl font-bold"><%= me.username %></h2>
-          <p class="text-gray-500 text-sm mt-1">
-            마지막 로그인 · <%= me.lastLogin ?? '정보 없음' %>
-          </p>
+          <h2 class="text-24sb"><%= me.username %></h2>
+          <p class="text-slate-400 text-14m mt-pr-4">마지막 로그인 · <%= me.lastLogin ?? '정보 없음' %></p>
         </div>
-
-        <a href="/profile/edit"
-           class="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm hover:bg-blue-700 transition">
-          프로필 수정
-        </a>
+        <a href="/profile/edit" class="btn btn-primary">프로필 수정</a>
       </div>
-
     </section>
 
-
-
-    <div class="flex gap-6 px-1 border-b pb-3 font-medium text-gray-600 select-none">
-      <button class="tab-btn tab-active text-blue-600 border-b-2 border-blue-600 pb-2" data-tab="posts">내 글</button>
-      <button class="tab-btn pb-2 hover:text-blue-600" data-tab="comments">내 댓글</button>
-      <button class="tab-btn pb-2 hover:text-blue-600" data-tab="likes">추천한 글</button>
-      <button class="tab-btn pb-2 hover:text-blue-600" data-tab="dislikes">비추천한 글</button>
+    <div class="flex gap-pr-16 border-b border-slate-700 pb-pr-8 font-medium text-slate-400">
+      <button class="tab-btn tab-active text-b-tertiary border-b-2 border-b-tertiary pb-pr-8" data-tab="posts">내 글</button>
+      <button class="tab-btn pb-pr-8 hover:text-white" data-tab="comments">내 댓글</button>
+      <button class="tab-btn pb-pr-8 hover:text-white" data-tab="likes">추천한 글</button>
+      <button class="tab-btn pb-pr-8 hover:text-white" data-tab="dislikes">비추천한 글</button>
     </div>
 
-
-
-
-
-    <section id="posts" class="tab-content mt-6">
-
-      <% if (myPosts.length === 0) { %>
-        <p class="text-center text-gray-500 py-10">작성한 글이 없습니다.</p>
-      <% } else { %>
-
-        <div class="space-y-6">
-          <% myPosts.forEach(post => { %>
-
-            <a href="/detail/<%= post._id %>" 
-               class="block bg-white rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
-
-              <div class="p-5">
-
-                <h3 class="font-bold text-lg text-gray-900 mb-2"><%= post.title %></h3>
-
-                <% if (post.content) { %>
-                  <p class="text-gray-600 text-sm mb-3 line-clamp-2"><%= post.content %></p>
-                <% } %>
-
-                <div class="flex items-center justify-between text-sm text-gray-500 pt-4 border-t">
-                  <span><%= new Date(post.createdAt).toLocaleString() %></span>
-
-                  <div class="flex gap-4 items-center">
-                    <span class="flex items-center gap-1">👍 <%= post.likeCount ?? 0 %></span>
-                    <span class="flex items-center gap-1">👎 <%= post.dislikeCount ?? 0 %></span>
-                  </div>
-                </div>
-
-              </div>
-
-            </a>
-
-          <% }) %>
-        </div>
-
-      <% } %>
-
+    <section id="posts" class="tab-content mt-pr-20">
+      <% if (myPosts.length === 0) { %><p class="empty-state py-pr-20">작성한 글이 없습니다.</p><% } else { %>
+      <div class="space-y-pr-12"><% myPosts.forEach(post => { %>
+        <a href="/detail/<%= post._id %>" class="block card hover:border-slate-500 transition">
+          <h3 class="text-18sb mb-pr-8"><%= post.title %></h3>
+          <% if (post.content) { %><p class="text-slate-300 text-14m mb-pr-12 line-clamp-2"><%= post.content %></p><% } %>
+          <div class="flex items-center justify-between text-12m text-slate-400 border-t border-slate-700 pt-pr-10"><span><%= new Date(post.createdAt).toLocaleString() %></span><span>👍 <%= post.likeCount ?? 0 %> · 👎 <%= post.dislikeCount ?? 0 %></span></div>
+        </a>
+      <% }) %></div><% } %>
     </section>
 
-
-    <section id="comments" class="tab-content hidden mt-6">
-
-      <% if (myComments.length === 0) { %>
-        <p class="text-center text-gray-500 py-10">작성한 댓글이 없습니다.</p>
-      <% } else { %>
-
-        <div class="space-y-6">
-          <% myComments.forEach(c => { %>
-
-            <a href="/detail/<%= c.parentId %>" 
-               class="block bg-white rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition p-5">
-
-              <p class="text-gray-800 mb-2"><%= c.content %></p>
-              <p class="text-xs text-gray-500"><%= new Date(c.createdAt).toLocaleString() %></p>
-
-            </a>
-
-          <% }) %>
-        </div>
-
-      <% } %>
-
+    <section id="comments" class="tab-content hidden mt-pr-20">
+      <% if (myComments.length === 0) { %><p class="empty-state py-pr-20">작성한 댓글이 없습니다.</p><% } else { %>
+      <div class="space-y-pr-12"><% myComments.forEach(c => { %>
+        <a href="/detail/<%= c.parentId %>" class="block card hover:border-slate-500 transition"><p class="text-slate-200"><%= c.content %></p><p class="text-12m text-slate-400 mt-pr-8"><%= new Date(c.createdAt).toLocaleString() %></p></a>
+      <% }) %></div><% } %>
     </section>
 
-
-
-
-
-    <section id="likes" class="tab-content hidden mt-6">
-
-      <% if (likedPosts.length === 0) { %>
-        <p class="text-center text-gray-500 py-10">추천한 글이 없습니다.</p>
-      <% } else { %>
-
-        <div class="space-y-6">
-          <% likedPosts.forEach(post => { %>
-
-            <a href="/detail/<%= post._id %>" 
-               class="block bg-white rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
-
-              <div class="p-5">
-                <h3 class="font-bold text-lg text-gray-900 mb-2"><%= post.title %></h3>
-
-                <% if (post.content) { %>
-                <p class="text-gray-600 text-sm line-clamp-2 mb-3"><%= post.content %></p>
-                <% } %>
-
-                <div class="flex justify-between text-sm text-gray-500 border-t pt-4">
-                  <span><%= new Date(post.createdAt).toLocaleString() %></span>
-
-                  <div class="flex gap-4 items-center">
-                    <span class="flex items-center gap-1">👍 <%= post.likeCount ?? 0 %></span>
-                    <span class="flex items-center gap-1">👎 <%= post.dislikeCount ?? 0 %></span>
-                  </div>
-                </div>
-              </div>
-
-            </a>
-
-          <% }) %>
-        </div>
-
-      <% } %>
-
+    <section id="likes" class="tab-content hidden mt-pr-20">
+      <% if (likedPosts.length === 0) { %><p class="empty-state py-pr-20">추천한 글이 없습니다.</p><% } else { %>
+      <div class="space-y-pr-12"><% likedPosts.forEach(post => { %><a href="/detail/<%= post._id %>" class="block card hover:border-slate-500 transition"><h3 class="text-18sb mb-pr-8"><%= post.title %></h3><% if (post.content) { %><p class="text-slate-300 text-14m line-clamp-2 mb-pr-10"><%= post.content %></p><% } %><div class="text-12m text-slate-400 border-t border-slate-700 pt-pr-8"><%= new Date(post.createdAt).toLocaleString() %></div></a><% }) %></div><% } %>
     </section>
 
-
-
-
-
-    <section id="dislikes" class="tab-content hidden mt-6">
-
-      <% if (dislikedPosts.length === 0) { %>
-        <p class="text-center text-gray-500 py-10">비추천한 글이 없습니다.</p>
-      <% } else { %>
-
-        <div class="space-y-6">
-          <% dislikedPosts.forEach(post => { %>
-
-            <a href="/detail/<%= post._id %>" 
-               class="block bg-white rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition">
-
-              <div class="p-5">
-                <h3 class="font-bold text-lg text-gray-900 mb-2"><%= post.title %></h3>
-
-                <% if (post.content) { %>
-                <p class="text-gray-600 text-sm line-clamp-2 mb-3"><%= post.content %></p>
-                <% } %>
-
-                <div class="flex justify-between text-sm text-gray-500 border-t pt-4">
-                  <span><%= new Date(post.createdAt).toLocaleString() %></span>
-
-                  <div class="flex gap-4 items-center">
-                    <span class="flex items-center gap-1">👍 <%= post.likeCount ?? 0 %></span>
-                    <span class="flex items-center gap-1">👎 <%= post.dislikeCount ?? 0 %></span>
-                  </div>
-                </div>
-              </div>
-
-            </a>
-
-          <% }) %>
-        </div>
-
-      <% } %>
-
+    <section id="dislikes" class="tab-content hidden mt-pr-20">
+      <% if (dislikedPosts.length === 0) { %><p class="empty-state py-pr-20">비추천한 글이 없습니다.</p><% } else { %>
+      <div class="space-y-pr-12"><% dislikedPosts.forEach(post => { %><a href="/detail/<%= post._id %>" class="block card hover:border-slate-500 transition"><h3 class="text-18sb mb-pr-8"><%= post.title %></h3><% if (post.content) { %><p class="text-slate-300 text-14m line-clamp-2 mb-pr-10"><%= post.content %></p><% } %><div class="text-12m text-slate-400 border-t border-slate-700 pt-pr-8"><%= new Date(post.createdAt).toLocaleString() %></div></a><% }) %></div><% } %>
     </section>
-
-
-
   </main>
-
-
-
 
   <script>
     const tabs = document.querySelectorAll('.tab-btn');
     const panels = document.querySelectorAll('.tab-content');
-
     tabs.forEach(btn => {
       btn.addEventListener('click', () => {
-
-        tabs.forEach(t => t.classList.remove('tab-active', 'text-blue-600', 'border-blue-600', 'border-b-2'));
-        btn.classList.add('tab-active', 'text-blue-600', 'border-blue-600', 'border-b-2');
-
+        tabs.forEach(t => t.classList.remove('tab-active', 'text-b-tertiary', 'border-b-tertiary', 'border-b-2'));
+        btn.classList.add('tab-active', 'text-b-tertiary', 'border-b-tertiary', 'border-b-2');
         panels.forEach(p => p.classList.add('hidden'));
         document.getElementById(btn.dataset.tab).classList.remove('hidden');
-
       });
     });
   </script>
-
 </body>
 </html>
