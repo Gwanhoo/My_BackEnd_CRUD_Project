@@ -4,7 +4,6 @@
 
 WebSocket(Socket.IO)을 사용해 사용자 간 실시간 메시지 송수신을 처리합니다.
 
-![chat](./images/chat.png)
 
 - 메시지 실시간 전송/수신
 - 채팅방 단위 다중 사용자 통신
@@ -51,15 +50,11 @@ WebSocket(Socket.IO)을 사용해 사용자 간 실시간 메시지 송수신을
 
 ### Realtime Chat
 
-![chat](./images/chat.png)
-
-### Studyroom UI
-
-![studyroom](./images/studyroom.png)
+<img width="1056" height="648" alt="Image" src="https://github.com/user-attachments/assets/9a1213c0-05c1-4477-97a6-e99c7bee955e" />
 
 ### Main UI
 
-![main-ui](./images/main-ui.png)
+<img width="1121" height="772" alt="Image" src="https://github.com/user-attachments/assets/59a25478-a1b2-4360-86d2-7525e80bbb9a" />
 
 ## 기술 스택
 
