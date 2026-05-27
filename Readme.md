@@ -64,44 +64,48 @@
 
 ```mermaid
 flowchart LR
-  subgraph Client[Browser]
-    UI[EJS Views / Browser UI]
+  subgraph Client["Browser"]
+    UI["EJS Views / Browser UI"]
   end
 
-  subgraph Server[Node.js + Express]
-    EX[Express Server]
-    REST[REST Routes]
-    AUTH[Passport Auth\nLocal + Kakao + Session]
-    WS[Socket.io]
+  subgraph Server["Node.js + Express"]
+    EX["Express Server"]
+    REST["REST Routes"]
+    AUTH["Passport Auth<br/>Local + Kakao + Session"]
+    WS["Socket.io"]
   end
 
-  subgraph External[External OAuth]
-    KAKAO[Kakao OAuth]
+  subgraph External["External OAuth"]
+    KAKAO["Kakao OAuth"]
   end
 
-  subgraph DB[(MongoDB)]
-    U[(user)]
-    P[(post)]
-    C[(comment)]
-    CM[(chat)]
-    CR[(chatroom)]
-    PP[(people)]
+  subgraph Database["MongoDB"]
+    MDB[("MongoDB")]
+    U["user"]
+    P["post"]
+    C["comment"]
+    CM["chat"]
+    CR["chatroom"]
+    PP["people"]
   end
 
-  UI -->|HTTP Request| EX
+  UI -->|"HTTP Request"| EX
   EX --> REST
   REST --> AUTH
-  AUTH <-->|OAuth Redirect/Callback| KAKAO
+  AUTH <-->|"OAuth Redirect / Callback"| KAKAO
 
-  REST --> U
-  REST --> P
-  REST --> C
-  REST --> CR
-  REST --> PP
+  REST --> MDB
+  WS --> MDB
 
-  UI <-->|Socket Connection| WS
-  WS --> CM
-  WS -->|Room Broadcast| UI
+  MDB --- U
+  MDB --- P
+  MDB --- C
+  MDB --- CM
+  MDB --- CR
+  MDB --- PP
+
+  UI <-->|"Socket Connection"| WS
+  WS -->|"Room Broadcast"| UI
 ```
 
 ### 흐름 구분
